@@ -1,0 +1,66 @@
+; Fundação S0. Bindings são declarações de diagnóstico, sem gameplay.
+config_version=5
+
+[application]
+config/name="Último Sol"
+run/main_scene="res://src/game/foundation.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+
+[input]
+move_left={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":65), Object(InputEventKey,"physical_keycode":4194321), Object(InputEventJoypadMotion,"device":-1,"axis":0,"axis_value":-1.0)]
+}
+move_right={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":68), Object(InputEventKey,"physical_keycode":4194323), Object(InputEventJoypadMotion,"device":-1,"axis":0,"axis_value":1.0)]
+}
+move_up={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":87), Object(InputEventKey,"physical_keycode":4194320), Object(InputEventJoypadMotion,"device":-1,"axis":1,"axis_value":-1.0)]
+}
+move_down={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":83), Object(InputEventKey,"physical_keycode":4194322), Object(InputEventJoypadMotion,"device":-1,"axis":1,"axis_value":1.0)]
+}
+aim_left={
+"deadzone": 0.2,
+"events": [Object(InputEventJoypadMotion,"device":-1,"axis":2,"axis_value":-1.0)]
+}
+aim_right={
+"deadzone": 0.2,
+"events": [Object(InputEventJoypadMotion,"device":-1,"axis":2,"axis_value":1.0)]
+}
+aim_up={
+"deadzone": 0.2,
+"events": [Object(InputEventJoypadMotion,"device":-1,"axis":3,"axis_value":-1.0)]
+}
+aim_down={
+"deadzone": 0.2,
+"events": [Object(InputEventJoypadMotion,"device":-1,"axis":3,"axis_value":1.0)]
+}
+; Símbolos Godot/Xbox: X=2, A=0, Start=6. Não são rótulos universais:
+; no PlayStation correspondem às posições Quadrado, Cruz e Options;
+; em controles Nintendo as letras físicas podem diferir. Sem teste físico S0.
+attack={
+"deadzone": 0.2,
+"events": [Object(InputEventMouseButton,"button_index":1), Object(InputEventJoypadButton,"device":-1,"button_index":2)]
+}
+dodge={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":32), Object(InputEventJoypadButton,"device":-1,"button_index":0)]
+}
+pause={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":4194305), Object(InputEventJoypadButton,"device":-1,"button_index":6)]
+}
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.06, 0.10, 0.12, 1)

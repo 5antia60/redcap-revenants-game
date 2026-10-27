@@ -1,0 +1,44 @@
+[gd_scene format=3]
+
+; Interface de diagnóstico S0, não é menu nem amostra de arte final.
+; Texto nativo claro sobre sombra azulada, sem animação ou ações funcionais.
+[node name="Foundation" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 48
+
+[node name="Center" type="CenterContainer" parent="Margin"]
+layout_mode = 2
+
+[node name="Diagnostics" type="VBoxContainer" parent="Margin/Center"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="Margin/Center/Diagnostics"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.88, 0.68, 1)
+theme_override_font_sizes/font_size = 40
+text = "Último Sol — Fundação S0"
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="Margin/Center/Diagnostics"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.94, 0.96, 1)
+theme_override_font_sizes/font_size = 24
+text = "Sem gameplay implementado"
+horizontal_alignment = 1

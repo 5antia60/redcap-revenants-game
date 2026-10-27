@@ -1,0 +1,26 @@
+# Ferramentas portáteis, cache e saídas locais.
+/.tools/
+/.godot/
+/builds/
+/tests/.generated/
+
+# Temporários de editores e do sistema.
+*.tmp
+*.temp
+*.bak
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Segredos locais; exemplos sem valores reais podem ser versionados.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+credentials.json
+
+# Não ignorar .uid nem metadados .import de recursos.
