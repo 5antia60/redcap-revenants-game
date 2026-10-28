@@ -24,3 +24,10 @@ Reprodução adicional: coordenador criou fixture isolada em `.tools/s0/clean-pr
 
 ## Continuidade
 Fonte atual é este repositório, não o antigo diretório documental `vibe-c/apps/ultimo-sol`. O plano S0 registra contratos, chamadas, limitações e verificação Git, sem guardar segredos ou valores de identidade pessoal.
+
+## Entrega efetiva da continuação — 2026-10-28
+Commit técnico `5430195a735b3856f8c36fb63184e704daafe7db` (`build(s0): validar exportação e captura 1080p`) publicado e confirmado em `origin/S0-fundacao`, com árvore limpa após operação. Antes do push, suítes reais146/0 e63/0 novamente verdes; índice/diff completo/objetos inspecionados, sem binários/cache ou padrões locais de segredo (não scanner completo). Main remota permaneceu em `b251483d5702764350f110df07253a32e67a7765`, sem merge/tag/build pública.
+
+Consulta atual à API pública confirmou nenhum PR aberto correspondente a origem `5antia60:S0-fundacao` e base `main`. Navegador na comparação mostrou `Sign in`; `gh` ausente. Criação do PR está bloqueada por ferramenta/autenticação, não realizada. Link de comparação, que **não é PR criado**: `https://github.com/5antia60/redcap-revenants-game/compare/main...S0-fundacao?expand=1`.
+
+Próximo passo efetivo: usuário autenticar GitHub no navegador disponível ou abrir PR dessa origem para main pelo link; coordenador deve localizar/conferir PR real antes de declarar entrega completa. Depois, aceite dos critérios S0 e decisão humana de integração, sem merge automático. Não começar S1. Este registro posterior ao commit técnico não altera código/testes/contratos; o hash do registro documental fica na entrega Git mais recente, sem autorreferência.
