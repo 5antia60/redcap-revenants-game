@@ -2,6 +2,8 @@
 
 Estado: planejamento global aprovado e S0 explicitamente autorizada, em preparação/implementação. Nenhuma sprint concluída. S1–S7 não autorizadas. Detalhamento e evidências S0 em [plano da fundação](superpowers/plans/2026-10-27-s0-fundacao.md).
 
+Continuação S0: exports locais Debug/Release, auditoria dos PCK, execução sem editor/fonte em staging e captura de janela1920×1080 verificados; suíte atual146/0 e wrappers63/0. Revisões/entrega por PR da Tarefa2 e aceite do usuário continuam gates, sem progresso de S1 inferido desses testes.
+
 ## 1. Regras de condução
 Antes de cada sprint: conferir última evidência, dependências, versão da engine, decisões humanas e disponibilidade de assets; detalhar tarefas coesas, arquivos exclusivos, executor, cenários positivos/negativos e comandos. Registrar o detalhamento nesta fonte, sem plano paralelo concorrente. Estimativa em tempo só após conhecer disponibilidade do usuário e velocidade observada.
 
