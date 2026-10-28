@@ -38,6 +38,7 @@ func _run() -> void:
 	if result == OK:
 		_test_config(config)
 		_test_input(config)
+	_test_export_preset()
 	await _test_scene()
 	if "--self-test-failure" in OS.get_cmdline_user_args():
 		check(false, "falha deliberada do runner")
@@ -59,6 +60,33 @@ func _test_config(config: ConfigFile) -> void:
 		"renderizador deve ser Compatibility")
 	check(ProjectSettings.get_setting("application/run/main_scene", "") == MAIN_SCENE,
 		"engine deve consumir a cena principal configurada")
+
+
+func _test_export_preset() -> void:
+	var preset := ConfigFile.new()
+	check(preset.load("res://export_presets.cfg") == OK, "preset de export deve ser legível")
+	check(preset.get_value("preset.0", "name", "") == "Windows S0", "preset Windows S0")
+	check(preset.get_value("preset.0", "platform", "") == "Windows Desktop", "plataforma Windows")
+	check(preset.get_value("preset.0", "export_filter", "") == "scenes", "export somente de cenas selecionadas")
+	check(preset.get_value("preset.0", "export_files", PackedStringArray()) == PackedStringArray([MAIN_SCENE]),
+		"somente a fundação deve iniciar a seleção de dependências")
+	check(preset.get_value("preset.0", "include_filter", "invalid") == "", "não incluir arquivos extras")
+	var exclusions: String = preset.get_value("preset.0", "exclude_filter", "")
+	for path: String in ["docs/brief.md", "tests/run_tests.gd", "tests/.generated/probe.tscn",
+		"scripts/export.ps1", ".tools/probe.tscn", "builds/probe.tscn", ".git/config", "README.md", "AGENTS.md"]:
+		var excluded := false
+		for pattern: String in exclusions.split(",", false):
+			if path.matchn(pattern.strip_edges()):
+				excluded = true
+		check(excluded, "filtro deve excluir desenvolvimento: " + path)
+	for mode: String in ["debug", "release"]:
+		check(preset.get_value("preset.0.options", "custom_template/" + mode, "") ==
+			".tools/templates/4.7.2.stable/windows_%s_x86_64.exe" % mode, "template local explícito: " + mode)
+	check(preset.get_value("preset.0.options", "binary_format/architecture", "") == "x86_64", "arquitetura x86_64")
+	check(preset.get_value("preset.0.options", "binary_format/embed_pck", true) == false, "PCK externo auditável")
+	check(preset.get_value("preset.0.options", "codesign/enable", true) == false, "sem assinatura")
+	check(preset.get_value("preset.0", "encrypt_pck", true) == false, "sem criptografia de pack")
+	check(preset.get_value("preset.0", "encrypt_directory", true) == false, "sem criptografia de diretório")
 
 
 func _test_input(config: ConfigFile) -> void:
