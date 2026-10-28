@@ -1,5 +1,5 @@
 extends SceneTree
-## Verifica a fundação real, sem plugins e sem depender de assert removível.
+## Verifica a fundação e o movimento real, sem plugins ou assert removível.
 
 var failures: Array[String] = []
 var checks: int = 0
@@ -32,21 +32,46 @@ func check(condition: bool, message: String) -> void:
 
 
 func _run() -> void:
+	var watchdog := create_timer(30.0, true, false, true)
+	watchdog.timeout.connect(func() -> void:
+		printerr("FAIL: watchdog do runner excedeu 30 segundos")
+		quit(1)
+	)
 	var config := ConfigFile.new()
 	var result := config.load("res://project.godot")
 	check(result == OK, "project.godot deve existir e ser legível")
 	if result == OK:
-		_test_config(config)
-		_test_input(config)
-	_test_export_preset()
-	await _test_scene()
+		check(_test_config(config) == true, "configuração deve concluir")
+		check(_test_input(config) == true, "InputMap deve concluir")
+	check(_test_export_preset() == true, "preset deve concluir")
+	check(await _test_scene() == true, "cena de fundação deve concluir")
+	for module_path: String in ["res://tests/unit/test_input_state.gd",
+		"res://tests/integration/test_player_motion.gd"]:
+		check(await _run_module(module_path) == true, "chamada do módulo deve concluir: " + module_path)
 	if "--self-test-failure" in OS.get_cmdline_user_args():
 		check(false, "falha deliberada do runner")
-	print("S0: %d verificações, %d falhas" % [checks, failures.size()])
+	print("S0 + S1: %d verificações, %d falhas" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)
 
 
-func _test_config(config: ConfigFile) -> void:
+func _run_module(path: String) -> bool:
+	check(ResourceLoader.exists(path), "módulo de teste deve existir: " + path)
+	if not ResourceLoader.exists(path):
+		return false
+	var script := load(path) as GDScript
+	check(script != null and script.can_instantiate(), "módulo deve carregar: " + path)
+	if script == null or not script.can_instantiate():
+		return false
+	var module = script.new()
+	check(module is RefCounted and module.has_method("run"), "módulo deve oferecer run: " + path)
+	if module is RefCounted and module.has_method("run"):
+		var completed: Variant = await module.run(self, check)
+		check(completed == true, "módulo deve retornar conclusão explícita: " + path)
+		return completed == true
+	return false
+
+
+func _test_config(config: ConfigFile) -> bool:
 	check(config.get_value("application", "run/main_scene", "") == MAIN_SCENE,
 		"cena principal deve ser a fundação")
 	check(not config.has_section("autoload"), "não deve haver autoloads")
@@ -60,9 +85,10 @@ func _test_config(config: ConfigFile) -> void:
 		"renderizador deve ser Compatibility")
 	check(ProjectSettings.get_setting("application/run/main_scene", "") == MAIN_SCENE,
 		"engine deve consumir a cena principal configurada")
+	return true
 
 
-func _test_export_preset() -> void:
+func _test_export_preset() -> bool:
 	var preset := ConfigFile.new()
 	check(preset.load("res://export_presets.cfg") == OK, "preset de export deve ser legível")
 	check(preset.get_value("preset.0", "name", "") == "Windows S0", "preset Windows S0")
@@ -87,12 +113,13 @@ func _test_export_preset() -> void:
 	check(preset.get_value("preset.0.options", "codesign/enable", true) == false, "sem assinatura")
 	check(preset.get_value("preset.0", "encrypt_pck", true) == false, "sem criptografia de pack")
 	check(preset.get_value("preset.0", "encrypt_directory", true) == false, "sem criptografia de diretório")
+	return true
 
 
-func _test_input(config: ConfigFile) -> void:
+func _test_input(config: ConfigFile) -> bool:
 	check(config.has_section("input"), "InputMap deve estar declarado no projeto")
 	if not config.has_section("input"):
-		return
+		return false
 	check(config.get_section_keys("input").size() == EXPECTED_BINDINGS.size(),
 		"InputMap deve conter somente as 11 ações de diagnóstico")
 	for action: String in EXPECTED_BINDINGS:
@@ -114,6 +141,7 @@ func _test_input(config: ConfigFile) -> void:
 		var expected: Array = EXPECTED_BINDINGS[action].duplicate()
 		expected.sort()
 		check(actual == expected, "bindings de %s: %s" % [action, actual])
+	return true
 
 
 func _event_signature(event: InputEvent) -> String:
@@ -129,14 +157,14 @@ func _event_signature(event: InputEvent) -> String:
 	return "evento não previsto"
 
 
-func _test_scene() -> void:
+func _test_scene() -> bool:
 	check(ResourceLoader.exists(MAIN_SCENE), "cena de fundação deve existir")
 	if not ResourceLoader.exists(MAIN_SCENE):
-		return
+		return false
 	var packed := load(MAIN_SCENE) as PackedScene
 	check(packed != null, "cena deve carregar como PackedScene")
 	if packed == null:
-		return
+		return false
 	for viewport_size: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
 		var viewport := SubViewport.new()
 		viewport.size = viewport_size
@@ -146,7 +174,7 @@ func _test_scene() -> void:
 		viewport.add_child(instance)
 		await process_frame
 		await process_frame
-		_check_diagnostic_tree(instance)
+		check(_check_diagnostic_tree(instance) == true, "árvore de diagnóstico deve concluir")
 		for label_name: String in ["Title", "Status"]:
 			var label := instance.find_child(label_name, true, false) as Label
 			check(label != null, "diagnóstico presente: " + label_name)
@@ -160,10 +188,12 @@ func _test_scene() -> void:
 			check(Rect2(Vector2.ZERO, Vector2(viewport_size)).encloses(label.get_global_rect()),
 				"texto dentro do viewport %s: %s" % [viewport_size, label_name])
 		viewport.free()
+	return true
 
 
-func _check_diagnostic_tree(node: Node) -> void:
+func _check_diagnostic_tree(node: Node) -> bool:
 	check(node is Control, "fundação contém somente nós de interface: " + str(node.name))
 	check(node.get_script() == null, "fundação não contém scripts: " + str(node.name))
 	for child: Node in node.get_children():
-		_check_diagnostic_tree(child)
+		check(_check_diagnostic_tree(child) == true, "filho de diagnóstico deve concluir: " + str(child.name))
+	return true

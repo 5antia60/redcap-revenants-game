@@ -46,3 +46,19 @@ Antes de S1/S2: aprovar câmera experimental, arma inicial, ações e sensação
 
 ## 7. Aprendizado em cada sprint
 Entrega inclui breve explicação de um conceito aplicado, uma alternativa descartada e um exercício manual reproduzível. Exemplos: coordenadas e vetores em S1, estados e composição em S2, comportamento e telegráficos em S3, ciclo de vida em S4 e perfil de desempenho em S7. Não criar um framework apenas para ensinar um padrão.
+
+## 8. S1 — recorte aprovado em 2026-10-28
+Após integrar o PR1, o usuário aprovou a tarefa/branch `S1-movimento` a partir da main atualizada: personagem provisório em arena com obstáculos, movimento por WASD/setas e analógico esquerdo, mira por mouse/analógico direito preservando última direção válida, câmera seguindo sem rotação, colisões, origem nos pés e leitura de profundidade. Sem combate, esquiva, inimigos, assets finais ou novas dependências.
+
+### Experiência do laboratório
+Arena temporária com área livre, limites, bloco baixo, prop alto contornável e uma passagem. Personagem e objetos usam formas simples e perspectiva aparente, não arte final. Um anel/ponto nos pés e marcador direcional distinguem posição física, orientação e deslocamento. Rótulo visível: “S1 · Blockout temporário — movimento e mira”. HUD informa controles, fonte efetiva da mira, perda de foco e desconexão, sem sugerir ataques disponíveis.
+
+Mira e movimento independentes: poder andar numa direção e mirar em outra. Cursor parado não toma a mira do controle quando a câmera se move; ruído dos analógicos não troca instruções. Mouse nos pés ou analógico neutro não apaga a última direção válida. Perda de foco para o movimento e exige nova intenção após retorno; desconectar controle não impede recuperação por teclado/mouse.
+
+### Escolhas técnicas iniciais reversíveis, não balanceamento final
+Escolhas iniciais do Tech Lead conferidas pelo usuário no plano S1 para validação no laboratório: velocidade240 unidades/s, direção inicial à direita, deadzone radial0,2 aplicada uma vez, câmera com zoom1 e sem suavização/drag/rotação. Arena1600×1000, início(800,500), colisor de raio10 e passagem mínima60. Valores existem para testes/ajuste, não são métricas de desempenho ou decisão sobre combate. Implementação do detalhamento autorizada; alterações fundamentais continuam sujeitas à aprovação humana.
+
+Teclado com tecla de movimento pressionada prevalece sobre analógico esquerdo, inclusive quando opostos se cancelam. Mira troca pela última atividade significativa; mouse vence empate no mesmo tick. Deslocamento acumulado de mouse de2 pixels lógicos e mudança de analógico de0,05 são limiares iniciais, ajustáveis sem mudar os pilares. Controle ativo é um dispositivo por vez, selecionado por intenção, não soma de todos os controles conectados.
+
+### Aceite e participação
+Testes automatizados cobrem intenção, coordenadas, física, foco/desconexão e empacotamento; capturas/vídeos assistidos demonstram o laboratório. Vídeo simulado não substitui teste manual com controle físico. Usuário executa o roteiro de teclado/mouse e controle quando disponível e relata sensação de movimento; indisponibilidade de controle físico mantém esse critério não verificado, sem impedir implementar/testar o restante. S1 só é aceita com critérios pertinentes atendidos e sem início automático da S2.

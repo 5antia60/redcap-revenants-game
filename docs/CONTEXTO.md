@@ -1,5 +1,14 @@
 # Contexto — Último Sol / redcap-revenants-game
 
+## Estado vigente — S1 em implementação, 2026-10-28
+PR1 confirmado integrado pelo usuário, merge/main remota `0d6b21baf8284a757a1666784bf357f7c604233c`. Coordenador sincronizou somente main/origin-main por fetch explícito sem força/tags, a partir de checkout limpo, e criou a branch aprovada `S1-movimento` desse hash após conferir nome e ausência de colisão local/remota. Base e destino de PR: main, remoto `https://github.com/5antia60/redcap-revenants-game.git`. Não trabalhar/push diretamente na principal.
+
+Baseline do merge executada: Godot146/0 e wrappers63/0, nenhum arquivo fonte alterado pelos testes. S0 integrada/aceita pelo usuário como base; S1 autorizada no recorte do GDD seção8. Plano `docs/superpowers/plans/2026-10-28-s1-movimento.md` conferido e aprovado para implementação. Não há autorização de combate, esquiva, inimigos, S2, serviços, dependências ou assets finais.
+
+Usuário conferiu o detalhamento e selecionou “Aprovar e implementar”, com agentes e revisão independente por tarefa; informou não ter controle físico. Próximo passo efetivo: implementar as duas tarefas serializadas do plano S1. Critério manual de controle físico continua não verificado/bloqueado para aceite completo, sem impedir os demais testes/implementação e sem converter simulação em prova física. Registros abaixo são históricos da S0 e não substituem este estado vigente.
+
+Tarefa1 S1 implementada, corrigida e reavaliada favoravelmente em aderência/qualidade pelo revisor independente `ses_e7d1f06a0ffeZKwT3Wsfs06PYU`. Encerrados os três achados: conclusão explícita de testes, orçamento exato de ticks e faixa numérica0..1000/default240. Coordenador verificou suíte309/0, negativa1, positiva309/0 e driver de oito fixtures sem divergências; implementador verificou import0/wrappers63/0. Main ainda é diagnóstico S0 nesta unidade. Próximo passo: registrar incremento Tarefa1 após controles Git e delegar nova sessão para Tarefa2 (arena/adaptador/câmera/pacote). Driver de fixtures precisará acompanhar as novas dependências de Main, sem falsas falhas por cópia incompleta. Relatório, snapshots e sessões identificados no plano S1; não reimplementar ou repetir reproduções históricas concluídas.
+
 ## Estado
 Planejamento global aprovado e S0 autorizada. Usuário definiu este repositório como destino de desenvolvimento e autorizou explicitamente bootstrap/publicação inicial em `origin/main`, distribuição portátil oficial Godot 4.7.2 e execução. Bootstrap confirmado em `b251483d5702764350f110df07253a32e67a7765`. Posteriormente autorizou templates oficiais, exportação local e continuação da validação1080. Nenhuma autorização de S1 ou gameplay.
 

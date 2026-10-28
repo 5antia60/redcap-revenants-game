@@ -1,7 +1,7 @@
 # Coordenação de Último Sol
 
 ## Estado e fontes
-Este alvo contém o projeto independente `redcap-revenants-game`, título criativo provisório Último Sol. S0 foi autorizada; gameplay e S1 ainda não. Leia `docs/CONTEXTO.md` e o próximo gate em `docs/ROADMAP.md`; GDD é fonte de produto, ART_BIBLE de direção artística e ARCHITECTURE de contratos técnicos. Não transforme hipótese em decisão aprovada.
+Este alvo contém o projeto independente `redcap-revenants-game`, título criativo provisório Último Sol. S0 integrada pelo usuário; S1-movimento e seu detalhamento aprovados para implementação de movimento/mira/câmera/colisão e blockout, não combate, esquiva, inimigos ou S2. Usuário não dispõe de controle físico: simulação não comprova esse critério manual. Leia `docs/CONTEXTO.md` e o próximo gate em `docs/ROADMAP.md`; GDD é fonte de produto, ART_BIBLE de direção artística e ARCHITECTURE de contratos técnicos. Não transforme hipótese em decisão aprovada.
 
 O ambiente coordenador atual é `C:/Users/sdelgado3/OneDrive - Lenovo/Documents/aiProjects/vibe-c`. Nele, consulte por necessidade `docs/SKILLS.md`, `docs/SQUAD.md`, `docs/QUALIDADE.md`, adaptações em `docs/SUPERPOWERS.md` e a política completa `docs/VERSIONAMENTO.md` antes de editar existente ou operar Git/entregas. Este repositório não está dentro de `vibe-c/apps`; caminhos `../../docs` não se aplicam. Fonte normativa indisponível bloqueia a ação afetada; em outro computador, pedir localização, não instalar outra configuração automaticamente. Esta página não substitui essas políticas.
 

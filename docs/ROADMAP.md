@@ -1,8 +1,8 @@
 # Roadmap e gates de qualidade
 
-Estado: planejamento global aprovado e S0 explicitamente autorizada, em preparação/implementação. Nenhuma sprint concluída. S1–S7 não autorizadas. Detalhamento e evidências S0 em [plano da fundação](superpowers/plans/2026-10-27-s0-fundacao.md).
+Estado: S0 integrada pelo usuário no PR1 e aceita como base para avançar; resultado integrado verificado no merge `0d6b21baf8284a757a1666784bf357f7c604233c` com Godot146/0 e wrappers63/0. S1-movimento autorizada em planejamento; S2–S7 não autorizadas. Evidências S0 em [plano da fundação](superpowers/plans/2026-10-27-s0-fundacao.md); detalhamento S1 em [plano de movimento](superpowers/plans/2026-10-28-s1-movimento.md).
 
-Continuação S0: exports locais Debug/Release, auditoria dos PCK, execução sem editor/fonte em staging e captura de janela1920×1080 verificados; suíte atual146/0 e wrappers63/0. Revisões da Tarefa2 e integração favoráveis; commit técnico5430195 publicado em `origin/S0-fundacao`, main inalterada. PR bloqueado por autenticação/ferramenta e aceite do usuário ainda pendentes; nenhuma sprint marcada concluída ou progresso de S1 inferido desses testes.
+Continuação S0 entregue: exports locais Debug/Release, auditoria dos PCK, execução sem editor/fonte em staging e captura de janela1920×1080 verificados. PR1 criado/conferido após login e depois integrado pelo usuário; bloqueios de autenticação documentados anteriormente são históricos resolvidos. Não atualizar engine/templates nem repetir exports S0 por rotina.
 
 ## 1. Regras de condução
 Antes de cada sprint: conferir última evidência, dependências, versão da engine, decisões humanas e disponibilidade de assets; detalhar tarefas coesas, arquivos exclusivos, executor, cenários positivos/negativos e comandos. Registrar o detalhamento nesta fonte, sem plano paralelo concorrente. Estimativa em tempo só após conhecer disponibilidade do usuário e velocidade observada.
