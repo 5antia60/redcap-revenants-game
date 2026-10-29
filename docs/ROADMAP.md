@@ -1,6 +1,6 @@
 # Roadmap e gates de qualidade
 
-Estado: S0 integrada pelo usuário no PR1 e aceita como base para avançar; resultado integrado verificado no merge `0d6b21baf8284a757a1666784bf357f7c604233c` com Godot146/0 e wrappers63/0. S1-movimento autorizada em planejamento; S2–S7 não autorizadas. Evidências S0 em [plano da fundação](superpowers/plans/2026-10-27-s0-fundacao.md); detalhamento S1 em [plano de movimento](superpowers/plans/2026-10-28-s1-movimento.md).
+Estado: S0/S1 integradas pelo usuário; S1 aceita após teste físico assistido, com dispensa explícita do vídeo em favor das confirmações da sessão. Main integrada PR2 `348aab6cfe3796ab904e096dbf8db9a46e5950e8` verificada com Godot502/0 e wrappers63/0. S2-combate e detalhamento aprovados para implementação por agentes com revisão por tarefa; S3–S7 não autorizadas. Evidências anteriores nos planos S0/S1; execução em [plano de combate S2](superpowers/plans/2026-10-29-s2-combate.md), especificação GDD seção9.
 
 Continuação S0 entregue: exports locais Debug/Release, auditoria dos PCK, execução sem editor/fonte em staging e captura de janela1920×1080 verificados. PR1 criado/conferido após login e depois integrado pelo usuário; bloqueios de autenticação documentados anteriormente são históricos resolvidos. Não atualizar engine/templates nem repetir exports S0 por rotina.
 
@@ -23,6 +23,8 @@ Dependências: S0 aceito e autorização S1; regras de mira e câmera experiment
 Entrega: personagem placeholder em uma arena, movimento, colisões, câmera e leitura de profundidade. Arena é laboratório manual reutilizável.
 
 Aceite: movimento e mira funcionam nos dois dispositivos; diagonal não aumenta velocidade; vetor zero não gera direção inválida; foco/desconexão permitem recuperar controle; obstáculos não aprisionam jogador; origem nos pés e ordenação atrás/à frente de um prop alto demonstradas. Testes automatizados de entrada/transformações e integração pertinente passam; vídeo manual por dispositivo mostra o fluxo.
+
+Resultado S1: usuário confirmou todos os cenários assistidos com controle físico e teclado/mouse e autorizou explicitamente substituir o vídeo por suas confirmações dessa sessão. Critério de evidência ajustado por decisão humana, não por inferência do coordenador; nenhum vídeo ou observação física independente foi declarado. S1 aceita; três melhorias baixas de ferramentas/export continuam registradas no plano, sem bloqueador crítico/alto aberto.
 
 ### S2 — Núcleo do combate
 Dependências: S1 aceito e autorização S2; arma, ataque, esquiva/cancelamento e regras de dano aprovados.

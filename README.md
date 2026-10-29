@@ -16,6 +16,11 @@ S0 integrada pelo usuário. S1 autorizada e em validação: laboratório de movi
 - [Plano S1](docs/superpowers/plans/2026-10-28-s1-movimento.md): laboratório, contratos e evidências por tarefa.
 
 ## Ferramentas
+### Versões do jogo
+Usar Semantic Versioning enquanto o jogo evolui: primeira versão formal planejada `0.1.0` na S2; próximas entregas funcionais `0.2.0`, `0.3.0` e correções compatíveis incrementam PATCH. S0/S1 permanecem baselines históricos sem tags retroativas inventadas. Versão da aplicação não é a versão da engine. Metadado e identificação no jogo serão implementados na integração S2; ainda não há versão pronta liberada por este registro.
+
+Cada versão aceita e integrada recebe tag anotada `vMAJOR.MINOR.PATCH` após validação do hash na main, nunca antecipadamente na branch. Não mover tags existentes, enviar tags em lote ou publicar release/build automaticamente. Prévia `-dev` identifica desenvolvimento; `1.0.0` exige aprovação de uma versão estável, não apenas encerramento de sprint.
+
 Godot **4.7.2.stable.official.ed1daf0bf**, edição padrão Windows x86_64, GDScript e Compatibility. Engine e templates portáteis locais autorizados, fora do Git; sem alteração de PATH/AppData. Não instalar plugins, atualizar OpenCode ou publicar builds sem autorização pertinente.
 
 Para preparar outro checkout: obter o asset `Godot_v4.7.2-stable_win64.exe.zip` da [release oficial](https://github.com/godotengine/godot/releases/tag/4.7.2-stable), conferir 86.013.866 bytes e SHA-256 `731980f9608d61333e5baf54a2ef17210acc7a538446c0cb9969f002aca1e953`, e colocar os dois executáveis oficiais em `.tools/godot/`. Não executar download divergente ou material de origem não confirmada. O plano S0 registra os controles usados na preparação local.

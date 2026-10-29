@@ -1,6 +1,6 @@
 # GDD — Último Sol
 
-Estado: planejamento global aprovado; detalhamento de S0 autorizado. Nome criativo provisório. Data: 2026-10-27. Repositório de trabalho: `redcap-revenants-game`.
+Estado vigente: S0/S1 integradas e S1 aceita; S2 e seu plano detalhado aprovados para implementação por agentes com revisão por tarefa. Nome criativo provisório. Atualização: 2026-10-29. Repositório de trabalho: `redcap-revenants-game`.
 
 ## 1. Visão e decisões confirmadas
 Roguelike de ação 2D com aparência isométrica e combate frenético, ambientado em um apocalipse urbano brasileiro com zumbis. Desenvolvido em Godot 4 e GDScript, coordenado com agentes especializados no OpenCode. Alvo inicial: PC, single-player offline, teclado/mouse e controle.
@@ -62,3 +62,37 @@ Teclado com tecla de movimento pressionada prevalece sobre analógico esquerdo, 
 
 ### Aceite e participação
 Testes automatizados cobrem intenção, coordenadas, física, foco/desconexão e empacotamento; capturas/vídeos assistidos demonstram o laboratório. Vídeo simulado não substitui teste manual com controle físico. Usuário executa o roteiro de teclado/mouse e controle quando disponível e relata sensação de movimento; indisponibilidade de controle físico mantém esse critério não verificado, sem impedir implementar/testar o restante. S1 só é aceita com critérios pertinentes atendidos e sem início automático da S2.
+
+Aceite em 2026-10-29: usuário conectou controle físico e confirmou todos os blocos assistidos de movimento/mira, colisões/profundidade e foco/desconexão/teclado/reconexão. Autorizou explicitamente usar suas confirmações dessa sessão no lugar do vídeo originalmente previsto. Evidência é relato humano, não filmagem nem observação física pelo agente; S1 aceita sobre a entrega integrada no PR2. Essa exceção não afirma existência de vídeo e não autoriza alterar critérios de outras sprints silenciosamente.
+
+## 9. S2 — cassetete e esquiva: recorte e detalhamento
+**Confirmado pelo usuário:** referência de resposta, ritmo e impacto de Hades, com identidade própria; cassetete policial no lugar do facão e esquiva antes de fuzil. Fuzil é incremento posterior, não entrega S2. Não foi decidido que o sobrevivente seja policial ou use uniforme. Arte final continua na S5; S2 utiliza silhueta, animação, efeitos e som provisórios necessários para validar legibilidade e resposta.
+
+**Gate concluído:** usuário conferiu o plano completo e respondeu “sim, aprovado”, autorizando a implementação por agentes com revisão por tarefa. Valores e regras abaixo são o detalhamento conferido, com parâmetros iniciais reversíveis para validação no laboratório; mudanças fundamentais continuam exigindo aprovação. O plano detalha esta especificação, não é outro GDD.
+
+### Golpe e sensação proposta
+Um golpe por nova pressão: botão esquerdo do mouse ou botão oeste do controle (X/Quadrado). Sem repetição automática ao segurar, combo, ataque especial, projétil ou buffer de comando nesta primeira versão. Movimento conserva intensidade e velocidade S1 durante o golpe, sem avanço automático. Mira continua independente, mas a direção do golpe é fixada quando ele começa.
+
+Preparação de 0,05 s, janela ativa de 0,08 s e recuperação de 0,14 s: total inicial de 0,27 s, hipótese reversível, não diversão medida. Alcance máximo de contato de 60 unidades desde os pés e setor frontal de 90 graus. Desenho e detecção compartilham o mesmo polígono convexo aproximando o setor; alvo pode ser atingido por contato de sua base com esse setor, não por posição da cabeça. Linha física contra cenário impede contato através de parede. Um golpe pode atingir mais de um alvo, mas nunca causar dano duas vezes ao mesmo receptor, mesmo com várias shapes ou múltiplos ticks. Tentativa rejeitada por invulnerabilidade também consome o contato daquele golpe; o próximo golpe usa outra identidade.
+
+### Esquiva proposta
+Espaço ou botão sul do controle (A/Cruz): 0,15 s a 800 unidades/s, distância livre nominal de 120 unidades; paredes/obstáculos podem reduzir essa distância. Direção de movimento atual; em repouso, última mira válida. Uma carga, recarga de 0,60 s depois do fim. Invulnerabilidade nos primeiros 0,10 s, indicada por contorno duplo que termina junto da proteção; rastro curto não significa proteção.
+
+Esquiva permitida em repouso ou recuperação, cancelando somente a recuperação; não cancela preparação/janela ativa. Entre solicitações simultâneas em estado elegível, esquiva tem precedência; ataque durante esquiva é descartado, sem ficar enfileirado. Não há sequência de esquivas, stamina ou upgrade. Tempos e alcance são parâmetros iniciais; elegibilidade e cancelamento são regras a conferir antes do código.
+
+### Vida e laboratório
+Jogador com 100 de vida, três alvos estacionários com 30 cada, cassetete causa 10 por golpe aceito. Vida nunca fica negativa; morte emite um evento uma única vez. Morto ou gameplay suspenso não recebe novos comandos/danos. Não há empurrão, IA, inimigos perseguidores ou conclusão de encontro S3.
+
+Uma zona retangular de treino de 120×80 unidades, fora do nascimento, permite experimentar dano e invulnerabilidade sem IA: ciclo de 1 s, com aviso de 0,35 s, ativo por 0,10 s e repouso de 0,55 s; dano 25, no máximo uma tentativa por jogador por pulso. Forma e texto distinguem aviso/ativo, não apenas cor; sobreposição física usa a mesma área desenhada no chão. Entrar andando demonstra dano; atravessar sincronizando esquiva demonstra proteção. Reinício restaura jogador, alvos, zona, custos e estados recriando o laboratório.
+
+Amostragem técnica proposta: corpo se move primeiro; contato, proteção e contorno usam o instante final do passo físico. Não é detecção contínua de todo trajeto. Se um passo atravessar a janela ativa inteira, ela ainda produz uma consulta; se atravessar vários pulsos, somente o mais recente é considerado, sem rajada de dano atrasado. Tempos de proteção não se estendem por um tick extra de arredondamento. Interromper uma esquiva não devolve seu período total de indisponibilidade de0,75s já assumido.
+
+### Pausa, foco e recuperação
+Escape ou Start abre pausa; controle/teclado/mouse operam Continuar e Reiniciar com foco visível. Pausa manual congela relógios e fase corrente; não aceita ataques novos nem acumula comandos. Retomar exige soltura/nova pressão e neutralização de analógicos. Reiniciar descarta a tentativa atual; durante tentativa viva há confirmação, após morte o botão reinicia diretamente.
+
+Perda de foco ou desconexão do controle ativo interrompe golpe/esquiva, limpa solicitações e abre pausa com motivo. Proteção interrompida termina imediatamente; recarga já assumida não é devolvida. Teclado/mouse continuam acessíveis para continuar/reiniciar. Relógio da zona também para durante a pausa, evitando dano em segundo plano. Inicialização sem foco mantém entrada bloqueada; testes devem preparar foco/pausa explicitamente e restaurar SceneTree ao terminar.
+
+### Feedback e aceite
+Cassetete recua, setor ativo aparece somente durante dano e retorno comunica recuperação. Acerto combina reação breve do alvo, redução de vida e som seco; erro usa som leve. Sons sintetizados localmente, sem assets externos, e volume conservador. Sem hit-stop global, tremor de câmera, flashes de tela ou gore nesta proposta. Sem som, acerto/dano/esquiva continuam compreensíveis.
+
+HUD compacto mostra vida, esquiva pronta/recarga e instruções, sem cobrir a prova espacial S1. Capturas nativas 1280×720 e 1920×1080 mostram preparação/ativo/recuperação, alvo atingido/morto, esquiva/proteção, pausa e reinício. Testes de regra e física precedem ajuste de sensação. Usuário executa roteiro real em teclado/mouse e controle, relata resposta/impacto/legibilidade e aprova ou pede ajuste delimitado; simulação ou captura automatizada não substitui esse aceite. S3 só começa com autorização explícita.
