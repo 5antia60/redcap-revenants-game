@@ -108,7 +108,8 @@ Um checkout/branch da tarefa, um implementador de cada vez; nenhuma worktree adi
 - [x] Usuário selecionou “Aprovar e implementar” e informou “Não tenho controle”. Hardware físico indisponível; implementar/testar restante sem declarar aceite de controle físico.
 - [x] Tarefa1 implementada, testada, revisada e commitada como incremento válido: `db5c8d852169e40e3d4d9bb73e60f13e4ee7b8dc`.
 - [x] Tarefa2 implementada, testada e revisada, incluindo export real e staging; registro Git/PR permanece etapa seguinte.
-- [ ] Revisão integrada final, push/PR real e resultados entregues; sem merge automático.
+- [x] Revisão integrada final e push restrito dos commits técnicos confirmados; sem merge automático.
+- [ ] PR real para main e resultado final conferidos; depende de autenticação disponível.
 - [ ] Critérios completos/manuais S1 aceitos; só então pedir início S2.
 
 Auto-revisão do plano: requisitos aprovados mapeados nas duas tarefas; contratos usados pela Tarefa2 definidos na Tarefa1; arquivos/testes com escritor serial; negativos cobrem os cinco pontos de revisão. Lacuna deliberada: executor/hardware de controle físico ainda não confirmado, não convertido em simulação aprovada. Este plano não contém código de gameplay implementado.
@@ -198,3 +199,10 @@ Sessão nova `revisao` `ses_e781d9392ffellMqO38wLSiBKk`, solicitado `openai/gpt-
 Primeiro retorno bloqueou apenas legibilidade dos dois logs finais de auditoria, recusados pela ferramenta como binários. Coordenador forneceu transcrições `.log.utf8.txt`, preservando originais e hashes, e `coordinator-execution-record.json` com proveniência dos exits/staging observados ao vivo nos comandos originais. Não repetiu exports/auditorias/runtime. Revalidação delimitada na mesma sessão/modelo confirmou fases dos dois exports e encerrou o gate técnico Tarefa2. Registros de execução são consolidados pelo coordenador, não execução independente do revisor ou inferência de exit pelo texto.
 
 Fonte permaneceu congelada durante a revisão; somente registros de conclusão são atualizados após parecer. Próximo gate: inspeção atual de índice/diff/objetos, commit e push exclusivamente da branch comprovadamente criada para esta tarefa, PR para main, sem merge/tag. Não há aceite de gameplay humano/hardware, vídeo manual, desempenho medido, certificação completa de acessibilidade ou autorização de S2. Três melhorias baixas permanecem abertas; risco alto não foi aceito pelo coordenador.
+
+### Registro e publicação dos incrementos técnicos
+Tarefa2 registrada em `9cd8195837ad70947083e62e93359df2a52f5738`, `feat(lab): adicionar laboratório de movimento`,30arquivos. Coordenador conferiu caminhos explícitos, diff/estatísticas preparados, whitespace, igualdade da fonte revisada, índice sem trabalho alheio e checkout limpo após commit. Última execução da suíte antes do registro502/0. Nenhum artefato binário/cache/manifesto privado incluído no Git.
+
+Antes do envio, coordenador examinou os dois commits e69objetos alcançáveis novos,46blobs, quanto a escopo, nomes/extensões e padrões locais de segredo, além dos diffs revisados. Nenhum candidato encontrado; não foi executado scanner dedicado. Remoto fetch/push confirmado `https://github.com/5antia60/redcap-revenants-game.git`; consulta mínima atual confirmou main na base registrada e ausência de colisão. Push com refs explícitas e sem follow-tags somente `refs/heads/S1-movimento:refs/heads/S1-movimento`, confirmado remoto em `9cd8195`; main permaneceu `0d6b21b`. Sem força, tags, merge ou auto-merge.
+
+PR ainda não criado: CLI `gh` indisponível; navegador desta sessão exibiu GitHub sem autenticação (“Sign in”). Nenhuma instalação/configuração de autenticação automática. Link retornado pelo Git para criar PR não é um PR real; não declarar entrega via MR concluída. Aguardar autenticação humana na interface autorizada, consultar correspondente e criar/conferir somente origemS1-movimento/destino main, com pendências manuais e três melhorias baixas explícitas.
