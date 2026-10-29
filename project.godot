@@ -1,15 +1,18 @@
-; Fundação S0. Bindings são declarações de diagnóstico, sem gameplay.
+; Laboratório S1. Ações de combate continuam sem comportamento.
 config_version=5
 
 [application]
 config/name="Último Sol"
-run/main_scene="res://src/game/foundation.tscn"
+run/main_scene="res://src/game/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
 [display]
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+
+[editor]
+export/convert_text_resources_to_binary=false
 
 [input]
 move_left={
