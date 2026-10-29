@@ -109,7 +109,7 @@ Um checkout/branch da tarefa, um implementador de cada vez; nenhuma worktree adi
 - [x] Tarefa1 implementada, testada, revisada e commitada como incremento válido: `db5c8d852169e40e3d4d9bb73e60f13e4ee7b8dc`.
 - [x] Tarefa2 implementada, testada e revisada, incluindo export real e staging; registro Git/PR permanece etapa seguinte.
 - [x] Revisão integrada final e push restrito dos commits técnicos confirmados; sem merge automático.
-- [ ] PR real para main e resultado final conferidos; depende de autenticação disponível.
+- [x] PR real para main criado e conferido após autenticação humana: https://github.com/5antia60/redcap-revenants-game/pull/2. Sem merge/auto-merge.
 - [ ] Critérios completos/manuais S1 aceitos; só então pedir início S2.
 
 Auto-revisão do plano: requisitos aprovados mapeados nas duas tarefas; contratos usados pela Tarefa2 definidos na Tarefa1; arquivos/testes com escritor serial; negativos cobrem os cinco pontos de revisão. Lacuna deliberada: executor/hardware de controle físico ainda não confirmado, não convertido em simulação aprovada. Este plano não contém código de gameplay implementado.
@@ -206,3 +206,6 @@ Tarefa2 registrada em `9cd8195837ad70947083e62e93359df2a52f5738`, `feat(lab): ad
 Antes do envio, coordenador examinou os dois commits e69objetos alcançáveis novos,46blobs, quanto a escopo, nomes/extensões e padrões locais de segredo, além dos diffs revisados. Nenhum candidato encontrado; não foi executado scanner dedicado. Remoto fetch/push confirmado `https://github.com/5antia60/redcap-revenants-game.git`; consulta mínima atual confirmou main na base registrada e ausência de colisão. Push com refs explícitas e sem follow-tags somente `refs/heads/S1-movimento:refs/heads/S1-movimento`, confirmado remoto em `9cd8195`; main permaneceu `0d6b21b`. Sem força, tags, merge ou auto-merge.
 
 PR ainda não criado: CLI `gh` indisponível; navegador desta sessão exibiu GitHub sem autenticação (“Sign in”). Nenhuma instalação/configuração de autenticação automática. Link retornado pelo Git para criar PR não é um PR real; não declarar entrega via MR concluída. Aguardar autenticação humana na interface autorizada, consultar correspondente e criar/conferir somente origemS1-movimento/destino main, com pendências manuais e três melhorias baixas explícitas.
+
+### PR criado após autenticação humana
+Usuário informou login concluído e pediu criar o PR. Coordenador confirmou autenticação no navegador, pesquisa sem PR correspondente, checkout limpo, `main` no hash-base e branch remota em `ec4a54920533fc87b10d170facdb61bb3ed6cee1`. Criou e conferiu PR2: https://github.com/5antia60/redcap-revenants-game/pull/2, título “S1-movimento: adicionar laboratório de movimento e mira”, origem `S1-movimento`, destino `main`, estado Open. Descrição registra objetivo, alterações, comandos/resultados reais, exports/staging, três melhorias baixas e aceites manuais/físicos pendentes. Sem instalação de CLI, merge, auto-merge ou tag. Checks0 na criação não equivale a CI aprovado. Entrega técnica por PR realizada; aceite completo S1 e início S2 continuam sujeitos aos gates humanos já definidos.
