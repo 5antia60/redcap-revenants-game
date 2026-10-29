@@ -19,7 +19,9 @@ $destination = Join-Path $root ('.tools/s1/review-fixtures/' + $Stage.ToLowerInv
 New-Item -ItemType Directory -Path $destination | Out-Null
 $files = @('project.godot', 'export_presets.cfg', 'src/game/foundation.tscn',
     'src/player/input_state.gd', 'src/player/player.gd', 'src/player/player.tscn',
-    'tests/run_tests.gd', 'tests/unit/test_input_state.gd', 'tests/integration/test_player_motion.gd')
+    'src/game/main.tscn', 'src/arenas/movement_lab.tscn', 'src/arenas/movement_lab.gd', 'src/player/player_input.gd',
+    'tests/run_tests.gd', 'tests/unit/test_input_state.gd', 'tests/integration/test_player_motion.gd',
+    'tests/integration/test_movement_lab.gd', 'tests/fixtures/test_player_input_collection.gd')
 $cases = @('normal', 'missing_movement', 'missing_aim', 'runtime_subtest', 'runtime_module',
     'missing_module_run', 'multiple_ticks', 'invalid_speed')
 $driverFailures = 0

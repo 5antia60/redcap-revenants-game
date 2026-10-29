@@ -4,7 +4,8 @@ extends SceneTree
 var failures: Array[String] = []
 var checks: int = 0
 
-const MAIN_SCENE := "res://src/game/foundation.tscn"
+const MAIN_SCENE := "res://src/game/main.tscn"
+const FOUNDATION_SCENE := "res://src/game/foundation.tscn"
 const EXPECTED_BINDINGS := {
 	"move_left": ["key:65", "key:4194321", "axis:0:-1"],
 	"move_right": ["key:68", "key:4194323", "axis:0:1"],
@@ -46,7 +47,7 @@ func _run() -> void:
 	check(_test_export_preset() == true, "preset deve concluir")
 	check(await _test_scene() == true, "cena de fundação deve concluir")
 	for module_path: String in ["res://tests/unit/test_input_state.gd",
-		"res://tests/integration/test_player_motion.gd"]:
+		"res://tests/integration/test_player_motion.gd", "res://tests/integration/test_movement_lab.gd"]:
 		check(await _run_module(module_path) == true, "chamada do módulo deve concluir: " + module_path)
 	if "--self-test-failure" in OS.get_cmdline_user_args():
 		check(false, "falha deliberada do runner")
@@ -73,7 +74,7 @@ func _run_module(path: String) -> bool:
 
 func _test_config(config: ConfigFile) -> bool:
 	check(config.get_value("application", "run/main_scene", "") == MAIN_SCENE,
-		"cena principal deve ser a fundação")
+		"cena principal deve ser Main S1")
 	check(not config.has_section("autoload"), "não deve haver autoloads")
 	check(config.get_value("display", "window/size/viewport_width", 0) == 1280,
 		"viewport deve ter largura 1280")
@@ -95,8 +96,12 @@ func _test_export_preset() -> bool:
 	check(preset.get_value("preset.0", "platform", "") == "Windows Desktop", "plataforma Windows")
 	check(preset.get_value("preset.0", "export_filter", "") == "scenes", "export somente de cenas selecionadas")
 	check(preset.get_value("preset.0", "export_files", PackedStringArray()) == PackedStringArray([MAIN_SCENE]),
-		"somente a fundação deve iniciar a seleção de dependências")
-	check(preset.get_value("preset.0", "include_filter", "invalid") == "", "não incluir arquivos extras")
+		"somente Main deve iniciar a seleção de dependências")
+	check(preset.get_value("preset.0", "script_export_mode", -1) == 0, "scripts devem ser texto auditável")
+	check(ProjectSettings.get_setting("editor/export/convert_text_resources_to_binary", true) == false,
+		"cenas devem preservar texto auditável")
+	check(preset.get_value("preset.0", "include_filter", "invalid") == "src/player/input_state.gd",
+		"incluir explicitamente somente input_state sem wildcard de scripts")
 	var exclusions: String = preset.get_value("preset.0", "exclude_filter", "")
 	for path: String in ["docs/brief.md", "tests/run_tests.gd", "tests/.generated/probe.tscn",
 		"scripts/export.ps1", ".tools/probe.tscn", "builds/probe.tscn", ".git/config", "README.md", "AGENTS.md"]:
@@ -158,10 +163,10 @@ func _event_signature(event: InputEvent) -> String:
 
 
 func _test_scene() -> bool:
-	check(ResourceLoader.exists(MAIN_SCENE), "cena de fundação deve existir")
-	if not ResourceLoader.exists(MAIN_SCENE):
+	check(ResourceLoader.exists(FOUNDATION_SCENE), "cena de fundação deve existir")
+	if not ResourceLoader.exists(FOUNDATION_SCENE):
 		return false
-	var packed := load(MAIN_SCENE) as PackedScene
+	var packed := load(FOUNDATION_SCENE) as PackedScene
 	check(packed != null, "cena deve carregar como PackedScene")
 	if packed == null:
 		return false
