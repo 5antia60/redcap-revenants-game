@@ -1,8 +1,10 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://src/arenas/movement_lab.gd" id="1_lab"]
 [ext_resource type="PackedScene" path="res://src/player/player.tscn" id="2_player"]
 [ext_resource type="Script" path="res://src/player/player_input.gd" id="3_input"]
+[ext_resource type="PackedScene" path="res://src/arenas/training_target.tscn" id="4_target"]
+[ext_resource type="Script" path="res://src/arenas/damage_zone.gd" id="5_zone"]
 
 [sub_resource type="RectangleShape2D" id="Horizontal"]
 size = Vector2(1640, 40)
@@ -18,6 +20,7 @@ size = Vector2(40, 180)
 bg_color = Color(0.075, 0.14, 0.17, 0.97)
 
 [node name="MovementLab" type="Node2D"]
+process_mode = 1
 script = ExtResource("1_lab")
 
 [node name="Floor" type="Polygon2D" parent="."]
@@ -103,6 +106,18 @@ limit_bottom = 1000
 position_smoothing_enabled = false
 ignore_rotation = true
 
+[node name="Target1" parent="Actors" instance=ExtResource("4_target")]
+position = Vector2(740, 260)
+[node name="Target2" parent="Actors" instance=ExtResource("4_target")]
+position = Vector2(860, 260)
+[node name="Target3" parent="Actors" instance=ExtResource("4_target")]
+position = Vector2(980, 260)
+
+[node name="DamageZone" type="Node2D" parent="." node_paths=PackedStringArray("player")]
+position = Vector2(1320, 760)
+script = ExtResource("5_zone")
+player = NodePath("../Actors/Player")
+
 [node name="PlayerInput" type="Node" parent="." node_paths=PackedStringArray("player")]
 script = ExtResource("3_input")
 player = NodePath("../Actors/Player")
@@ -117,7 +132,7 @@ color = Color(1, 0.9, 0.59, 1)
 [node name="Panel" type="PanelContainer" parent="HUD"]
 offset_left = 24.0
 offset_top = 20.0
-offset_right = 780.0
+offset_right = 504.0
 theme_override_styles/panel = SubResource("HudStyle")
 mouse_filter = 2
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
@@ -132,37 +147,42 @@ mouse_filter = 2
 [node name="Title" type="Label" parent="HUD/Panel/Margin/Rows"]
 theme_override_colors/font_color = Color(1, 0.89, 0.66, 1)
 theme_override_font_sizes/font_size = 22
-text = "S1 · Blockout temporário — movimento e mira"
+text = "S2 · Blockout temporário — cassetete e esquiva"
+autowrap_mode = 3
 [node name="State" type="Label" parent="HUD/Panel/Margin/Rows"]
 theme_override_colors/font_color = Color(0.9, 0.94, 0.91, 1)
 theme_override_font_sizes/font_size = 17
 text = "Mira: mouse · Foco: ativo\nControle: nenhum ativo"
+[node name="Combat" type="Label" parent="HUD/Panel/Margin/Rows"]
+theme_override_colors/font_color = Color(1, 0.89, 0.66, 1)
+theme_override_font_sizes/font_size = 18
+text = "Vida 100/100 · Esquiva pronta"
 
 [node name="Help" type="PanelContainer" parent="HUD"]
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = -145.0
+offset_top = -56.0
 offset_right = -24.0
-offset_bottom = -58.0
+offset_bottom = 0.0
 grow_vertical = 0
 theme_override_styles/panel = SubResource("HudStyle")
 mouse_filter = 2
 [node name="Margin" type="MarginContainer" parent="HUD/Help"]
 theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 8
+theme_override_constants/margin_top = 4
 theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_bottom = 4
 mouse_filter = 2
 [node name="Rows" type="VBoxContainer" parent="HUD/Help/Margin"]
-theme_override_constants/separation = 4
+theme_override_constants/separation = 2
 mouse_filter = 2
 [node name="Instructions" type="Label" parent="HUD/Help/Margin/Rows"]
 theme_override_colors/font_color = Color(0.9, 0.94, 0.91, 1)
 theme_override_font_sizes/font_size = 16
-text = "WASD / setas: mover · Mouse: mirar · Controle: analógico esquerdo move / direito mira"
+text = "WASD / setas: mover · Mouse: mirar · LMB / oeste: golpear · Espaço / sul: esquivar · Esc / Start: pausa"
 [node name="Recovery" type="Label" parent="HUD/Help/Margin/Rows"]
 theme_override_colors/font_color = Color(0.9, 0.94, 0.91, 1)
 theme_override_font_sizes/font_size = 16
-text = "Ao voltar: solte e pressione novamente as teclas; neutralize os sticks antes de mover.\nAnel = pés · ponto sobre cenário = diagnóstico · sem combate"
+text = "Ao voltar: solte e pressione novamente as teclas e botões; neutralize os sticks antes de mover.\nAnel = pés · ponto sobre cenário = diagnóstico · zona TREINO causa dano, não é inimigo"

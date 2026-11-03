@@ -33,9 +33,12 @@ func check(condition: bool, message: String) -> void:
 
 
 func _run() -> void:
-	var watchdog := create_timer(30.0, true, false, true)
+	# A suíte S2 completa percorre 309 frames a --fixed-fps 10 (30,9 s
+	# simulados). Manter margem finita para a regressão de múltiplos ticks;
+	# o executor também impõe timeout externo para bloqueios síncronos.
+	var watchdog := create_timer(40.0, true, false, true)
 	watchdog.timeout.connect(func() -> void:
-		printerr("FAIL: watchdog do runner excedeu 30 segundos")
+		printerr("FAIL: watchdog do runner excedeu 40 segundos")
 		quit(1)
 	)
 	var config := ConfigFile.new()
@@ -49,7 +52,7 @@ func _run() -> void:
 	for module_path: String in ["res://tests/unit/test_input_state.gd",
 		"res://tests/unit/test_action_state.gd", "res://tests/unit/test_health.gd",
 		"res://tests/integration/test_player_motion.gd", "res://tests/integration/test_movement_lab.gd",
-		"res://tests/integration/test_melee_hit.gd"]:
+		"res://tests/integration/test_melee_hit.gd", "res://tests/integration/test_combat_lab.gd"]:
 		check(await _run_module(module_path) == true, "chamada do módulo deve concluir: " + module_path)
 	if "--self-test-failure" in OS.get_cmdline_user_args():
 		check(false, "falha deliberada do runner")
@@ -68,7 +71,15 @@ func _run_module(path: String) -> bool:
 	var module = script.new()
 	check(module is RefCounted and module.has_method("run"), "módulo deve oferecer run: " + path)
 	if module is RefCounted and module.has_method("run"):
+		var saved_pause := paused
+		var saved_key := Input.is_physical_key_pressed(KEY_D)
 		var completed: Variant = await module.run(self, check)
+		paused = saved_pause
+		var restore := InputEventKey.new()
+		restore.physical_keycode = KEY_D
+		restore.pressed = saved_key
+		Input.parse_input_event(restore)
+		Input.flush_buffered_events()
 		check(completed == true, "módulo deve retornar conclusão explícita: " + path)
 		return completed == true
 	return false
@@ -102,8 +113,8 @@ func _test_export_preset() -> bool:
 	check(preset.get_value("preset.0", "script_export_mode", -1) == 0, "scripts devem ser texto auditável")
 	check(ProjectSettings.get_setting("editor/export/convert_text_resources_to_binary", true) == false,
 		"cenas devem preservar texto auditável")
-	check(preset.get_value("preset.0", "include_filter", "invalid") == "src/player/input_state.gd",
-		"incluir explicitamente somente input_state sem wildcard de scripts")
+	check(preset.get_value("preset.0", "include_filter", "invalid") == "src/player/input_state.gd,src/player/action_state.gd,src/combat/health.gd,src/combat/melee_hit.gd",
+		"incluir explicitamente somente módulos locais sem wildcard de scripts")
 	var exclusions: String = preset.get_value("preset.0", "exclude_filter", "")
 	for path: String in ["docs/brief.md", "tests/run_tests.gd", "tests/.generated/probe.tscn",
 		"scripts/export.ps1", ".tools/probe.tscn", "builds/probe.tscn", ".git/config", "README.md", "AGENTS.md"]:

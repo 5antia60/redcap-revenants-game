@@ -27,6 +27,8 @@ Aceite: movimento e mira funcionam nos dois dispositivos; diagonal não aumenta 
 Resultado S1: usuário confirmou todos os cenários assistidos com controle físico e teclado/mouse e autorizou explicitamente substituir o vídeo por suas confirmações dessa sessão. Critério de evidência ajustado por decisão humana, não por inferência do coordenador; nenhum vídeo ou observação física independente foi declarado. S1 aceita; três melhorias baixas de ferramentas/export continuam registradas no plano, sem bloqueador crítico/alto aberto.
 
 ### S2 — Núcleo do combate
+Progresso técnico: T1/T2 revisadas e commitadas; T3 implementada e revalidada por código/UX após três correções médias. Fonte corrigida1345/0, exports reais Debug/Release auditados17entradas/0falhas e staging somente artefatos120frames/exit0; versão0.1.0 observada nas duas builds. Revisão integrada final favorável; entrega Git ainda pendente. Aceite humano S2 nos dois dispositivos/áudio/feeling continua aberto; não autoriza S3 ou tag pronta. Evidências e hashes no plano S2/contexto.
+
 Dependências: S1 aceito e autorização S2; arma, ataque, esquiva/cancelamento e regras de dano aprovados.
 
 Entrega: uma ação de ataque, esquiva se aprovada, alvo de treino, vida/morte e feedback mínimo. Sem arsenal ou framework de habilidades.

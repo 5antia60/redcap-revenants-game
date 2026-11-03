@@ -9,16 +9,23 @@ class TickBudget extends Node:
 	var adapter: Node
 	var target: int
 	var completed: int = 0
+	var lab: Node
 	func _physics_process(_delta: float) -> void:
 		completed += 1
 		if completed == target:
+			_set_ticks(lab, false)
 			player.set_physics_process(false)
 			adapter.set_physics_process(false)
 			set_physics_process(false)
 			finished.emit()
+	func _set_ticks(node: Node, enabled: bool) -> void:
+		node.set_physics_process(enabled)
+		for child: Node in node.get_children():
+			_set_ticks(child, enabled)
 
 
 func run(tree: SceneTree, check: Callable) -> bool:
+	var saved_pause := tree.paused
 	check.call(ResourceLoader.exists(MAIN), "S1: Main jogável deve existir")
 	if not ResourceLoader.exists(MAIN):
 		return false
@@ -34,10 +41,12 @@ func run(tree: SceneTree, check: Callable) -> bool:
 		tree.root.add_child(viewport)
 		var main := packed.instantiate()
 		viewport.add_child(main)
+		_freeze(main.get_node("MovementLab"))
 		var lab := main.get_node_or_null("MovementLab")
 		check.call(lab != null, "Main instancia laboratório")
 		if lab == null:
 			viewport.free()
+			tree.paused = saved_pause
 			return false
 		var player := lab.get_node_or_null("Actors/Player") as CharacterBody2D
 		var adapter := lab.get_node_or_null("PlayerInput")
@@ -45,11 +54,13 @@ func run(tree: SceneTree, check: Callable) -> bool:
 		check.call(player != null and adapter != null and camera != null, "dependências explícitas do laboratório")
 		if player == null or adapter == null or camera == null:
 			viewport.free()
+			tree.paused = saved_pause
 			return false
 		for method: String in ["sample_joypad", "set_focus_active", "_input", "_on_joy_connection_changed"]:
 			check.call(adapter.has_method(method), "adaptador oferece rotina normal: " + method)
 			if not adapter.has_method(method):
 				viewport.free()
+				tree.paused = saved_pause
 				return false
 		check.call(adapter.focus_active == adapter.get_window().has_focus(), "cena nasce com foco real da janela, não presume foreground")
 		check.call(player.position.is_equal_approx(Vector2(800, 500)), "início com 400x300 livres")
@@ -65,16 +76,19 @@ func run(tree: SceneTree, check: Callable) -> bool:
 		check.call(await _test_input(tree, lab, player, adapter, camera, check) == true, "entrada deve concluir")
 		check.call(await _test_geometry(tree, lab, player, adapter, check) == true, "geometria deve concluir")
 		viewport.free()
+		tree.paused = saved_pause
 		await tree.process_frame
 		check.call(Input.joy_connection_changed.get_connections().size() == before, "recriação limpa conexão")
 	var collection = load("res://tests/fixtures/test_player_input_collection.gd").new()
 	check.call(await collection.run(tree, check) == true, "módulo de coleta normal deve concluir explicitamente")
+	tree.paused = saved_pause
 	return true
 
 
 func _test_input(tree: SceneTree, lab: Node, player: CharacterBody2D, adapter: Node,
 		camera: Camera2D, check: Callable) -> bool:
 	adapter.set_focus_active(true)
+	lab.get_parent().set_paused(false)
 	adapter.sample_joypad(101, Vector2(0.6, 0), Vector2.UP)
 	check.call(await _ticks(tree, player, adapter, 1), "tick de analógico parcial")
 	check.call(player.velocity.is_equal_approx(Vector2(120, 0)), "deadzone única preserva analógico 0,6 em 120/s")
@@ -136,6 +150,7 @@ func _test_input(tree: SceneTree, lab: Node, player: CharacterBody2D, adapter: N
 	check.call(await _ticks(tree, player, adapter, 1), "sem foco")
 	check.call(player.velocity == Vector2.ZERO and player.aim_direction == direction, "entrada sem foco ignorada")
 	adapter.get_window().focus_entered.emit()
+	lab.get_parent().set_paused(false)
 	check.call(adapter.focus_active, "sinal real da janela rearma fluxo de foco")
 	_key(adapter, KEY_D, true)
 	_key(adapter, KEY_A, true)
@@ -154,6 +169,7 @@ func _test_input(tree: SceneTree, lab: Node, player: CharacterBody2D, adapter: N
 	check.call(player.velocity.x == 120 and adapter.aim_source == "gamepad", "neutralização rearma sticks")
 	Input.joy_connection_changed.emit(102, false)
 	check.call(adapter.active_device == -1 and player.velocity == Vector2.ZERO, "desconexão limpa ativo e velocidade")
+	lab.get_parent().set_paused(false)
 	Input.joy_connection_changed.emit(102, true)
 	adapter.sample_joypad(102, Vector2.RIGHT, Vector2.RIGHT)
 	check.call(await _ticks(tree, player, adapter, 1), "reconexão retida")
@@ -165,6 +181,7 @@ func _test_input(tree: SceneTree, lab: Node, player: CharacterBody2D, adapter: N
 	adapter.get_window().focus_exited.emit()
 	check.call(not adapter.focus_active, "sinal real da janela para entrada")
 	adapter.set_focus_active(true)
+	lab.get_parent().set_paused(false)
 	direction = player.aim_direction
 	_mouse(adapter, Vector2(100, 100), Vector2(100, 100))
 	check.call(await _ticks(tree, player, adapter, 1), "primeiro mouse após foco")
@@ -184,6 +201,7 @@ func _test_input(tree: SceneTree, lab: Node, player: CharacterBody2D, adapter: N
 func _test_geometry(tree: SceneTree, lab: Node, player: CharacterBody2D, adapter: Node, check: Callable) -> bool:
 	adapter.set_focus_active(false)
 	adapter.set_focus_active(true)
+	lab.get_parent().set_paused(false)
 	player.position = Vector2(40, 500)
 	_key(adapter, KEY_A, true)
 	check.call(await _ticks(tree, player, adapter, 20), "limite contínuo")
@@ -200,7 +218,7 @@ func _test_geometry(tree: SceneTree, lab: Node, player: CharacterBody2D, adapter
 	check.call(absf(player.position.x - 620) < 0.5, "passagem60 permite circulação sem atravessar shapes")
 	_key(adapter, KEY_D, false)
 	var title := lab.get_node("HUD/Panel/Margin/Rows/Title") as Label
-	check.call(title.text == "S1 · Blockout temporário — movimento e mira", "blockout claramente identificado")
+	check.call(title.text.begins_with("S2 · Blockout temporário — cassetete e esquiva"), "blockout claramente identificado")
 	return true
 
 
@@ -208,16 +226,23 @@ func _ticks(tree: SceneTree, player: Node, adapter: Node, count: int) -> bool:
 	var budget := TickBudget.new()
 	budget.player = player
 	budget.adapter = adapter
+	budget.lab = adapter.get_parent()
+	budget.process_mode = Node.PROCESS_MODE_ALWAYS
 	budget.target = count
 	budget.process_physics_priority = 100
 	tree.root.add_child(budget)
-	player.set_physics_process(true)
-	adapter.set_physics_process(true)
+	budget._set_ticks(budget.lab, true)
 	await budget.finished
 	await tree.process_frame
 	var completed := budget.completed == count
 	budget.free()
 	return completed
+
+
+func _freeze(node: Node) -> void:
+	node.set_physics_process(false)
+	for child: Node in node.get_children():
+		_freeze(child)
 
 
 func _key(adapter: Node, code: Key, pressed: bool) -> void:

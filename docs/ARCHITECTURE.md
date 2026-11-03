@@ -1,6 +1,6 @@
 # Arquitetura inicial
 
-Estado: S0 integrada; S1 em implementação/validação no recorte aprovado. Contratos atuais do laboratório na seção8. Evidências e gates reais ficam no plano S1 e no contexto; exemplos e registros S0 abaixo são históricos quando incompatíveis com o estado atual.
+Estado: S0/S1 integradas e S1 aceita; S2 implementada como candidato0.1.0, ainda sem aceite humano ou integração. Contratos S1 na seção8 e evolução S2 na seção9. Evidências e gates reais ficam no plano S2 e no contexto; registros anteriores são históricos quando incompatíveis com o estado atual.
 
 ## 1. Escolhas mínimas e alternativas
 | Proposta | Motivo | Alternativa e quando reconsiderar |
@@ -98,6 +98,7 @@ Este documento mantém decisões técnicas locais, sem criar ADRs vazios. Cada d
 - Consulta Context7 em 2026-10-27: `/godotengine/godot-docs`, documentação de linha de comando (`https://docs.godotengine.org/en/stable/tutorials/editor/command_line_tutorial.html`) e TileMaps (`https://docs.godotengine.org/en/stable/tutorials/2d/using_tilemaps.html`). Consulta upstream não fixa versão instalada nem substitui conferência da versão em S0.
 
 ## 8. Contratos implementados S1 — 2026-10-28
+Esta seção registra a base histórica S1; a seção9 descreve as extensões S2 vigentes.
 `Main` instancia `MovementLab`. Arena, chão e atores são compostos explicitamente; jogador/props compartilham Y-sort, origem nos pés e z-index compatível. Corpo CharacterBody2D usa modo flutuante e círculo de raio10; apresentação cresce acima da origem, sem altura física ou rotação do colisor. Câmera segue sem rotação, suavização ou drag; viewport lógico1280×720/canvas_items preservado. Formas/HUD são diagnóstico temporário, não arte final.
 
 `input_state.gd` é uma política RefCounted por instância, sem Input/câmera/relógio: recebe movimento e dados explícitos de atividade da mira. Normaliza somente o necessário, preserva intensidade analógica e aplica deadzone radial0,2 uma vez. Teclado ativo prevalece sobre stick, inclusive opostos; mouse vence empate de atividade significativa. Mira neutra mantém direção anterior. `player.gd` consome intenção antes de mover fisicamente, com default240 e faixa técnica0..1000; entrada inválida ou velocidade fora da faixa fica neutra. Teto técnico evita overflow, não define balanceamento final.
@@ -114,3 +115,23 @@ Decisão técnica conservadora após análise de segurança: quatro scripts pró
 Driver verifica tamanho/hash externos previamente registrados do PCK antes da engine. Leitor offline limitado a PCK4/engine4.7.2 verifica limites, diretório/intervalos, sete fontes e os dois caches observados: global exatamente `list=[]` seguido de LF, UID integralmente decodificado com referências canônicas somente às fontes autorizadas. Não extrai nem executa arquivos. Somente após validação semântica gera atestado externo com vínculo ao manifesto e tamanho/SHA256 dos três metadados exatos (`project.binary`, cache global e UID). Auditor compara novamente antes de ResourceLoader. Inclusão explícita de `input_state.gd` evita depender da descoberta de preload na exportação textual. Metadados não são legitimados apenas por calcular um hash de bytes arbitrários.
 
 Manifesto/configuração/engine/procedência conhecida e ausência de troca concorrente são raízes de confiança; `project.binary` é consumido antes do auditor, portanto não há sandbox nem autorização de packs externos hostis. Nomes legados `Windows S0`/`foundation.exe` permanecem, mas entrada selecionada é Main S1. Histórico S0 e exports S1 rejeitados foram preservados, não sobrescritos ou aprovados retroativamente. Novos Debug/Release passaram leitura offline/auditoria e staging somente de artefatos. Timers internos não garantem interrupção de operação síncrona bloqueada; supervisão externa dedicada é pendência baixa registrada, sem bypass de identidade confirmado. Revisão adicional também registrou duas melhorias baixas: criação atômica do manifesto e fixture específica da guarda de sobreposição, sem defeito confirmado na guarda atual. Ver estado no plano antes de concluir essas melhorias.
+
+## 9. Contratos implementados S2 — candidato0.1.0
+Regras aprovadas no GDD9 e contratos completos no plano S2. A integração mantém módulos locais e composição por cena, sem ECS, barramento global, plugins, rede ou persistência. `ActionState` controla fases/relógios e `Health` controla vida por instância; corpo, adaptador, resolver e zona consomem essas regras, sem segundo relógio global.
+
+### Ordem e identidade do passo
+Adaptador coleta antes do corpo; corpo consome bordas, avança ação uma vez, move nativamente e resolve golpe a partir dos pés finais. Zona processa depois do corpo. Janela ativa atravessada é preservada pelo snapshot do passo mesmo se a fase final já mudou; passo zero/inválido não reaplica efeitos históricos. Proteção usa somente o instante final, inclusive no limite0,10s. Esquiva percorre apenas a duração restante no último passo, sem distância extra ou colisão desativada.
+
+Resolver usa setor compartilhado com o desenho, bloqueio por cenário e identidade instance_id/serial. Registra receptor antes do callback, inclusive tentativa recusada, e revalida elegibilidade entre receptores para suportar interrupção/reentrância. Zona usa shapes reais e transforms finais com `Shape2D.collide`: a consulta anterior por broadphase podia refletir a posição anterior no mesmo callback. Alternativa rejeitada: confiar nessa consulta ou compensar com tolerância que ocultasse entrada/saída errada. Consequência: amostragem final explícita, não detecção contínua do trajeto. Passo que cruza vários pulsos considera somente o último, sem rajada atrasada.
+
+### Entrada e suspensão
+Bordas de controles são particionadas por ID e publicadas somente após arbitragem, a partir do dispositivo selecionado. Evita combinar esquiva de um controle com golpe de outro; seleção deliberada por eixos/botões e regras de teclado/mouse existentes permanecem. Descartar comandos rejeitados e limpar bordas por tick/rearmamento impede buffer e repetição por retenção. Testes substituem apenas leituras de hardware, mantendo coleta e processamento físico normais.
+
+Main/menu processam ALWAYS; arena é PAUSABLE. Pausa manual desabilita entrada e conserva fase/custo. Perda de foco/desconexão interrompe a ação e pausa, sem devolver recarga já assumida. Reinício desabilita arena antiga e a substitui diferidamente com guarda contra pedidos duplicados; recria vida/alvos/zona e exige rearmamento. Confirmação existe durante tentativa viva; após morte reinicia diretamente.
+
+### Apresentação e export
+HUD recolhe ajuda extensa durante gameplay, conserva fontes e distingue fonte da mira de direção fixada do golpe. Apresentação da zona é omitida apenas quando seu chão está inteiramente fora do viewport; relógio/query/dano não mudam. Blockout e áudio sintetizado são provisórios, não arte final ou sensação aprovada.
+
+Fronteira S2 exige exatamente14fontes (dez scripts/quatro cenas),17entradas totais e até14referências UID canônicas; três metadados e atestado de sete campos permanecem. Manifesto nasce das fontes revisadas antes do export. Não se ampliou autorização por inventário recebido ou wildcard; manifestos/packs S1 não são compatíveis com o conjunto S2. Fixture de sobreposição agora atinge a guarda estrutural com MD5 consistente e mutação específica. Criação não atômica/reparse do manifesto e watchdog síncrono permanecem baixas herdadas, não resolvidas.
+
+Auditor aceita0.1.0-dev e0.1.0, portanto a versão exata do candidato é conferida também nas capturas das próprias builds em staging. Hash/atestado não autenticam origem e `project.binary` precede o auditor. Revisões e testes técnicos não substituem aceite humano nem autorizam S3, integração automática ou tag pré-integração.
