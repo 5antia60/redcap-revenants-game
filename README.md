@@ -3,7 +3,7 @@
 Roguelike de ação 2D com aparência isométrica e ambientação em um apocalipse urbano brasileiro. “Último Sol” é o título criativo provisório; o nome deste repositório não representa mudança automática da direção aprovada.
 
 ## Estado
-S0/S1 integradas pelo usuário; S1 aceita em sessão assistida com teclado/mouse e controle físico. S2 implementada como candidato local `0.1.0`: cassetete, esquiva, três alvos, vida/morte, zona de treino e pausa/reinício. Fonte e correções receberam revisão por tarefa; exports Debug/Release foram auditados e iniciaram em staging somente EXE/PCK. Revisão integrada final favorável e branch `S2-combate` enviada; PR para main depende de autenticação atual, aceite humano S2 ainda pendente. Não há inimigos completos, arte final, build publicada ou autorização de S3.
+S0/S1 integradas pelo usuário; S1 aceita em sessão assistida com teclado/mouse e controle físico. S2 implementada como candidato local `0.1.0`: cassetete, esquiva, três alvos, vida/morte, zona de treino e pausa/reinício. Fonte e correções receberam revisão por tarefa; exports Debug/Release foram auditados e iniciaram em staging somente EXE/PCK. Revisão integrada final favorável e [PR3 aberto de S2-combate para main](https://github.com/5antia60/redcap-revenants-game/pull/3); aceite humano S2 e integração ainda pendentes. Não há inimigos completos, arte final, build publicada ou autorização de S3.
 
 ## Documentação
 - [GDD](docs/GDD.md): visão, pilares, escopo e decisões de produto.
