@@ -13,7 +13,9 @@
 
 function Get-S1SourcePaths {
     return @('res://src/player/input_state.gd','res://src/player/player_input.gd','res://src/player/player.gd',
-        'res://src/arenas/movement_lab.gd','res://src/game/main.tscn','res://src/player/player.tscn','res://src/arenas/movement_lab.tscn')
+        'res://src/arenas/movement_lab.gd','res://src/game/main.tscn','res://src/player/player.tscn','res://src/arenas/movement_lab.tscn',
+        'res://src/player/action_state.gd','res://src/combat/health.gd','res://src/combat/melee_hit.gd',
+        'res://src/arenas/training_target.gd','res://src/arenas/training_target.tscn','res://src/arenas/damage_zone.gd','res://src/game/main.gd')
 }
 
 function Assert-S1([bool]$Condition,[string]$Message) {
@@ -57,7 +59,7 @@ function Read-S1LocalBytes([string]$Path,[long]$Limit) {
 function Read-S1SourceManifest([string]$Path) {
     $bytes=Read-S1LocalBytes $Path 65536
     $data=([Text.UTF8Encoding]::new($false,$true).GetString($bytes))|ConvertFrom-Json
-    Assert-S1 (@($data.PSObject.Properties).Count -eq 2 -and ($data.version -is [long] -or $data.version -is [int]) -and $data.version -ceq 1 -and $data.resources -is [array] -and $data.resources.Count -eq 7) 'manifesto de sete fontes inválido'
+    Assert-S1 (@($data.PSObject.Properties).Count -eq 2 -and ($data.version -is [long] -or $data.version -is [int]) -and $data.version -ceq 1 -and $data.resources -is [array] -and $data.resources.Count -eq 14) 'manifesto de quatorze fontes inválido'
     $map=[Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
     foreach($entry in $data.resources) {
         Assert-S1 (@($entry.PSObject.Properties).Count -eq 3 -and $entry.path -is [string] -and (Get-S1SourcePaths) -ccontains $entry.path) 'caminho do manifesto inválido'
@@ -75,7 +77,7 @@ function Read-S1UidCache([byte[]]$Bytes) {
     try {
         # Este formato não tem campo próprio de versão: é fixado pelo PCK4/engine4.7.2.
         $count=Read-S1U32 $reader
-        Assert-S1 ($count -le 7) 'UID: contagem excede sete fontes'
+        Assert-S1 ($count -le 14) 'UID: contagem excede quatorze fontes'
         $ids=[Collections.Generic.HashSet[uint64]]::new()
         $paths=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
         $entries=@()
@@ -84,7 +86,7 @@ function Read-S1UidCache([byte[]]$Bytes) {
             Assert-S1 ($id -le [uint64][long]::MaxValue) 'UID: ID negativo/inválido'
             Assert-S1 ($length -gt 0 -and $length -le 256) 'UID: comprimento inválido'
             $path=[Text.UTF8Encoding]::new($false,$true).GetString((Read-S1Bytes $reader $length))
-            Assert-S1 ((Get-S1SourcePaths) -ccontains $path) 'UID: referência não canônica ou fora das sete fontes'
+            Assert-S1 ((Get-S1SourcePaths) -ccontains $path) 'UID: referência não canônica ou fora das quatorze fontes'
             Assert-S1 ($ids.Add($id) -and $paths.Add($path)) 'UID: conflito de ID ou caminho'
             $entries += [ordered]@{id=$id.ToString();path=$path}
         }
@@ -94,9 +96,9 @@ function Read-S1UidCache([byte[]]$Bytes) {
 }
 
 function Write-S1NewJson([string]$Path,[object]$Data) {
-    $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../.tools/s1'))+[IO.Path]::DirectorySeparatorChar
+    $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../.tools/s2'))+[IO.Path]::DirectorySeparatorChar
     $full=[IO.Path]::GetFullPath($Path)
-    Assert-S1 ($full.StartsWith($root,[StringComparison]::OrdinalIgnoreCase)) 'saída deve ficar sob .tools/s1'
+    Assert-S1 ($full.StartsWith($root,[StringComparison]::OrdinalIgnoreCase)) 'saída deve ficar sob .tools/s2'
     $parent=[IO.Path]::GetDirectoryName($full)
     while(($parent+[IO.Path]::DirectorySeparatorChar).StartsWith($root,[StringComparison]::OrdinalIgnoreCase)) {
         Assert-S1 ([IO.Directory]::Exists($parent)) 'diretório de saída deve existir'
@@ -194,6 +196,7 @@ function Invoke-S1PackInspection {
         Assert-S1 ($missing.Count -eq 0) ('fontes ausentes: '+($missing -join ','))
         Assert-S1 ($records.ContainsKey('res://project.binary')) 'project.binary obrigatório'
         foreach($path in $metadataPaths){Assert-S1 ($records.ContainsKey($path)) ('metadado obrigatório ausente: '+$path)}
+        Assert-S1 ($records.Count -eq 17) 'conjunto deve conter exatamente quatorze fontes e três metadados'
         $attestation=[ordered]@{version=1;engine='4.7.2.stable.official.ed1daf0bf';pck_format=4;pck_size=$ExpectedPckSize;
             pck_sha256=$ExpectedPckSha256;source_manifest_sha256=$manifest.Sha256;metadata=@($metadata)}
         $report.status='PASS'
@@ -213,7 +216,7 @@ if($MyInvocation.InvocationName -ne '.') {
     [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)
     try {
         $result=Invoke-S1PackInspection -PckPath $ReaderPckPath -ExpectedPckSize $ReaderExpectedSize -ExpectedPckSha256 $ReaderExpectedSha256 -ManifestPath $ReaderManifestPath -AttestationPath $ReaderAttestationPath -ReportPath $ReaderReportPath
-        Write-Output ('OFFLINE_OK: PCK4/4.7.2; sete fontes; metadados semanticamente validados; bytes='+$result.pck_size)
+        Write-Output ('OFFLINE_OK: PCK4/4.7.2; quatorze fontes; metadados semanticamente validados; bytes='+$result.pck_size)
         exit 0
     } catch { [Console]::Error.WriteLine('PREENGINE_REJECT: '+$_.Exception.Message); exit 1 }
 }

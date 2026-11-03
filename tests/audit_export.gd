@@ -5,8 +5,10 @@ extends SceneTree
 
 const MAIN_SCENE := "res://src/game/main.tscn"
 const SCRIPTS := ["res://src/player/input_state.gd", "res://src/player/player_input.gd",
-	"res://src/player/player.gd", "res://src/arenas/movement_lab.gd"]
-const SCENES := [MAIN_SCENE, "res://src/player/player.tscn", "res://src/arenas/movement_lab.tscn"]
+	"res://src/player/player.gd", "res://src/arenas/movement_lab.gd", "res://src/player/action_state.gd",
+	"res://src/combat/health.gd", "res://src/combat/melee_hit.gd", "res://src/arenas/training_target.gd",
+	"res://src/arenas/damage_zone.gd", "res://src/game/main.gd"]
+const SCENES := [MAIN_SCENE, "res://src/player/player.tscn", "res://src/arenas/movement_lab.tscn", "res://src/arenas/training_target.tscn"]
 # Caches observados/decodificados offline antes da engine; sem wildcard .godot/**.
 const METADATA := ["res://project.binary", "res://.godot/global_script_class_cache.cfg", "res://.godot/uid_cache.bin"]
 var failures: Array[String] = []
@@ -35,6 +37,7 @@ func _run() -> void:
 	if failures.is_empty():
 		_enumerate("res://", 0)
 		files.sort()
+		_check(files.size() == 17, "conjunto deve conter exatamente17 entradas")
 		for path: String in files:
 			print("PACK: ", path)
 			_check(path in SCRIPTS or path in SCENES or path in METADATA, "arquivo fora da allowlist exata: " + path)
@@ -55,8 +58,9 @@ func _run() -> void:
 		printerr("INVENTORY_REJECT: %d falhas; nenhum ResourceLoader autorizado" % failures.size())
 		quit(1)
 		return
-	print("INVENTORY_OK: quatro scripts/três cenas com identidade SHA256 externa")
+	print("INVENTORY_OK: dez scripts/quatro cenas com identidade SHA256 externa")
 	_check(ProjectSettings.get_setting("application/run/main_scene", "") == MAIN_SCENE, "configuração deve selecionar Main")
+	_check(ProjectSettings.get_setting("application/config/version", "") in ["0.1.0-dev", "0.1.0"], "configuração preserva versão do candidato S2")
 	for property: Dictionary in ProjectSettings.get_property_list():
 		_check(not String(property.name).begins_with("autoload/"), "autoload proibido")
 	if not failures.is_empty():
@@ -95,7 +99,7 @@ func _read_manifest() -> bool:
 	if not data is Dictionary or data.size() != 2 or data.get("version") != 1 or not data.get("resources") is Array:
 		return false
 	var entries: Array = data.resources
-	if entries.size() != 7:
+	if entries.size() != 14:
 		return false
 	for entry: Variant in entries:
 		if not entry is Dictionary or entry.size() != 3 or not entry.get("path") is String:
@@ -113,7 +117,7 @@ func _read_manifest() -> bool:
 			if character not in "0123456789abcdef":
 				return false
 		_manifest[relative] = entry
-	return _manifest.size() == 7 and _read_pack_attestation(args[3], FileAccess.get_sha256(path))
+	return _manifest.size() == 14 and _read_pack_attestation(args[3], FileAccess.get_sha256(path))
 
 
 func _read_pack_attestation(path: String, source_hash: String) -> bool:

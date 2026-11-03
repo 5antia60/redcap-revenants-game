@@ -28,7 +28,7 @@ func _run() -> void:
 		quit(1)
 		return
 	var target := BASE if args[0] == "720" else Vector2i(1920, 1080)
-	_destination = "res://.tools/s1/captures/task2-%s-%s" % [args[0], Time.get_ticks_usec()]
+	_destination = "res://.tools/s2/captures/task3-spatial-%s-%s" % [args[0], Time.get_ticks_usec()]
 	_check(not DirAccess.dir_exists_absolute(_destination), "destino novo sem sobrescrita")
 	_check(DirAccess.make_dir_recursive_absolute(_destination) == OK, "diretório novo de captura")
 	root.mode = Window.MODE_WINDOWED
@@ -59,6 +59,7 @@ func _run() -> void:
 		{"name": "05-focus-lost", "position": Vector2(800, 500)},
 		{"name": "06-disconnected", "position": Vector2(800, 500)}]:
 		adapter.set_focus_active(true)
+		main.set_paused(false)
 		player.position = stage.position
 		player.apply_intent(Vector2.ZERO, Vector2.RIGHT)
 		if stage.name == "05-focus-lost":
@@ -96,7 +97,7 @@ func _run() -> void:
 			_check(absf(actual.r - expected.r) < 0.02 and absf(actual.g - expected.g) < 0.02
 				and absf(actual.b - expected.b) < 0.02, "oclusão real do corpo por Y-sort: " + String(stage.name))
 			print("CAPTURE_OCCLUSION: stage=%s pixel=%s color=%s expected=%s" % [stage.name, pixel, actual, expected])
-		for label_name: String in ["Title", "Instructions", "State", "Recovery"]:
+		for label_name: String in ["Title", "Instructions", "State", "Recovery", "Combat"]:
 			var label := lab.get_node("HUD").find_child(label_name, true, false) as Label
 			_check(label.is_visible_in_tree() and label.size.x >= label.get_minimum_size().x
 				and label.size.y >= label.get_minimum_size().y, "texto sem recorte: " + label_name)

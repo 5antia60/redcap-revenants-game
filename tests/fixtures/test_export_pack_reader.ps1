@@ -5,10 +5,12 @@ $utf8 = New-Object Text.UTF8Encoding($false)
 [Console]::OutputEncoding=$utf8
 $OutputEncoding=$utf8
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-$destination = Join-Path $root ('.tools/s1/reader-fixtures-' + [guid]::NewGuid().ToString('N'))
+$destination = Join-Path $root ('.tools/s2/reader-fixtures-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $destination | Out-Null
 $sources = @('src/player/input_state.gd','src/player/player_input.gd','src/player/player.gd','src/arenas/movement_lab.gd',
-    'src/game/main.tscn','src/player/player.tscn','src/arenas/movement_lab.tscn')
+    'src/game/main.tscn','src/player/player.tscn','src/arenas/movement_lab.tscn',
+    'src/player/action_state.gd','src/combat/health.gd','src/combat/melee_hit.gd','src/arenas/training_target.gd',
+    'src/arenas/training_target.tscn','src/arenas/damage_zone.gd','src/game/main.gd')
 $manifest = Join-Path $destination 'frozen-source.json'
 $resources = @($sources | ForEach-Object { $p=Join-Path $root $_; [ordered]@{path='res://'+$_;
     size=(Get-Item -LiteralPath $p).Length;sha256=(Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash.ToLowerInvariant()} })
@@ -53,7 +55,14 @@ function Write-TestPack([string]$Path,[object[]]$Entries,[string]$Case) {
         if($Case -eq 'pck_overlap' -and $index -eq 1){$offset=0}
         $w.Write([uint64]$offset); $w.Write([uint64]$record.Bytes.Length)
         $md5=[Security.Cryptography.MD5]::Create()
-        try{$w.Write([byte[]]$md5.ComputeHash($record.Bytes))}finally{$md5.Dispose()}
+        $digestBytes=$record.Bytes
+        if($Case -eq 'pck_overlap' -and $index -eq 1) {
+            # O digest descreve os bytes realmente apontados, não o registro original.
+            # Só a guarda estrutural deve recusar esta sobreposição conhecida.
+            $digestBytes=[byte[]]::new($record.Bytes.Length)
+            [Array]::Copy($stream.ToArray(),[long]($base+$offset),$digestBytes,0,[long]$digestBytes.Length)
+        }
+        try{$w.Write([byte[]]$md5.ComputeHash($digestBytes))}finally{$md5.Dispose()}
         $w.Write([uint32]$(if($Case -eq 'entry_flags' -and $index -eq 0){4}else{0}))
         $index++
     }
@@ -70,7 +79,10 @@ $cases=@('valid_empty','valid_uid','valid_editor16','global_nonempty','global_tr
     'uid_traversal','uid_conflict_id','uid_conflict_path','uid_truncated','uid_trailing','uid_count_limit','uid_length_limit',
     'uid_negative_id','pck_version','engine_version','pck_flags','entry_flags','pck_duplicate','pck_alias','pck_traversal',
     'pck_offset','pck_overlap','pck_truncated','pck_trailing','pck_count_limit','resource_changed','resource_missing',
-    'hash_mismatch','size_mismatch','manifest_invalid','manifest_version_string','metadata_missing')
+    'hash_mismatch','size_mismatch','manifest_invalid','manifest_version_string','metadata_missing',
+    'valid_uid14','manifest_s1','manifest_extra_field','entry_extra_field','metadata_unknown')
+$newSources=@($sources | Select-Object -Skip 7)
+for($i=0;$i -lt $newSources.Count;$i++){$cases += "new_missing_$i","new_changed_$i"}
 $failures=0; $results=@()
 foreach($case in $cases) {
     $entries=@($sources|ForEach-Object{@{Name=$_;Bytes=[IO.File]::ReadAllBytes((Join-Path $root $_))}})
@@ -81,6 +93,7 @@ foreach($case in $cases) {
     $uidEntries=@(@{Id=31;Path='res://src/game/main.tscn'},@{Id=47;Path='res://src/player/player.gd'})
     switch($case) {
         'valid_empty' {$uidEntries=@()}
+        'valid_uid14' { $uidEntries=@(); for($i=0;$i -lt 14;$i++){$uidEntries += @{Id=100+$i;Path='res://'+$sources[$i]}} }
         'uid_test' {$uidEntries[0].Path='res://tests/inert.gd'}
         'uid_tool' {$uidEntries[0].Path='res://.tools/inert.gd'}
         'uid_absolute' {$uidEntries[0].Path='C:/inert.gd'}
@@ -94,7 +107,7 @@ foreach($case in $cases) {
     [byte[]]$uid=New-TestUid $uidEntries
     if($case -eq 'uid_truncated'){$uid=[byte[]]$uid[0..($uid.Length-2)]}
     if($case -eq 'uid_trailing'){$uid=[byte[]]($uid+[byte]0)}
-    if($case -eq 'uid_count_limit'){[BitConverter]::GetBytes([uint32]8).CopyTo($uid,0)}
+    if($case -eq 'uid_count_limit'){[BitConverter]::GetBytes([uint32]15).CopyTo($uid,0)}
     if($case -eq 'uid_length_limit'){[BitConverter]::GetBytes([uint32]65535).CopyTo($uid,12)}
     $entries += @{Name='.godot/global_script_class_cache.cfg';Bytes=$global},@{Name='.godot/uid_cache.bin';Bytes=$uid}
     if($case -eq 'metadata_missing'){$entries=@($entries|Where-Object{$_.Name -ne '.godot/uid_cache.bin'})}
@@ -103,6 +116,9 @@ foreach($case in $cases) {
     if($case -eq 'pck_traversal'){$entries[0].Name='src/player/../player/input_state.gd'}
     if($case -eq 'resource_changed'){$entries[0].Bytes=[byte[]]($entries[0].Bytes+[byte]32)}
     if($case -eq 'resource_missing'){$entries=@($entries|Where-Object{$_.Name -ne 'src/player/input_state.gd'})}
+    if($case -match '^new_missing_(\d+)$'){$missing=$newSources[[int]$Matches[1]];$entries=@($entries|Where-Object{$_.Name -cne $missing})}
+    if($case -match '^new_changed_(\d+)$'){$changed=$newSources[[int]$Matches[1]];($entries|Where-Object{$_.Name -ceq $changed}).Bytes += [byte]32}
+    if($case -eq 'metadata_unknown'){$entries += @{Name='.godot/unknown.cfg';Bytes=$utf8.GetBytes('inert')}}
     $pack=Join-Path $destination ($case+'.pck'); Write-TestPack $pack $entries $case
     $size=(Get-Item -LiteralPath $pack).Length; $hash=(Get-FileHash -LiteralPath $pack -Algorithm SHA256).Hash.ToLowerInvariant()
     if($case -eq 'hash_mismatch'){$hash='0'*64}
@@ -116,15 +132,23 @@ foreach($case in $cases) {
         $selectedManifest=Join-Path $destination 'string-version-manifest.json'
         [IO.File]::WriteAllText($selectedManifest,([ordered]@{version='1';resources=$resources}|ConvertTo-Json -Depth 5),$utf8)
     }
+    if($case -in @('manifest_s1','manifest_extra_field','entry_extra_field')) {
+        $selectedManifest=Join-Path $destination ($case+'.json')
+        $data=[ordered]@{version=1;resources=$resources}
+        if($case -eq 'manifest_s1'){$data.resources=@($resources|Select-Object -First 7)}
+        if($case -eq 'manifest_extra_field'){$data.extra='inert'}
+        if($case -eq 'entry_extra_field'){$data.resources=@($resources|ForEach-Object{[ordered]@{path=$_.path;size=$_.size;sha256=$_.sha256;extra='inert'}})}
+        [IO.File]::WriteAllText($selectedManifest,($data|ConvertTo-Json -Depth 5),$utf8)
+    }
     $accepted=$false; $message=''
     try {
         $result=Invoke-S1PackInspection -PckPath $pack -ExpectedPckSize $size -ExpectedPckSha256 $hash -ManifestPath $selectedManifest
         $accepted=$result.version -eq 1 -and $result.metadata.Count -eq 3
     } catch {$message=$_.Exception.Message}
-    $expected=$case -in @('valid_empty','valid_uid','valid_editor16')
+    $expected=$case -in @('valid_empty','valid_uid','valid_editor16','valid_uid14')
     $marker=switch -Regex ($case) {
         '^global_' {'cache global';break}
-        '^uid_(test|tool|absolute|user|traversal|alias)$' {'sete fontes';break}
+        '^uid_(test|tool|absolute|user|traversal|alias)$' {'quatorze fontes';break}
         '^uid_conflict' {'UID: conflito';break}
         '^uid_truncated$' {'truncado';break}
         '^uid_trailing$' {'UID: bytes excedentes';break}
@@ -134,12 +158,17 @@ foreach($case in $cases) {
         '^resource_changed$' {'bytes divergem da fonte';break}
         '^resource_missing$' {'fontes ausentes:';break}
         '^(hash_mismatch|size_mismatch)$' {'tamanho/hash externo';break}
-        '^manifest_' {'manifesto de sete fontes';break}
+        '^manifest_' {'manifesto de quatorze fontes';break}
+        '^entry_extra_field$' {'caminho do manifesto inválido';break}
+        '^pck_overlap$' {'sobreposição/lacuna de arquivos';break}
+        '^new_missing_' {'fontes ausentes:';break}
+        '^new_changed_' {'bytes divergem da fonte';break}
         '^metadata_missing$' {'metadado obrigatório ausente:';break}
         default {'INVENTORY_REJECT:'}
     }
     $correct=$accepted -eq $expected -and ($expected -or ($message.Contains('INVENTORY_REJECT:') -and $message.Contains($marker)))
-    if($case -in @('global_nonempty','uid_test','uid_user','uid_traversal','uid_conflict_id','uid_truncated','uid_trailing','hash_mismatch','manifest_invalid')) {
+    if($case -match '^new_' -or $case -in @('global_nonempty','uid_test','uid_user','uid_traversal','uid_conflict_id','uid_truncated','uid_trailing','uid_count_limit',
+        'hash_mismatch','manifest_invalid','manifest_s1','manifest_extra_field','entry_extra_field','metadata_unknown','pck_overlap')) {
         $ErrorActionPreference='Continue'
         $gateOutput=@(& powershell -NoProfile -File (Join-Path $root 'tests/test_export_audit.ps1') -Mode Audit -PckPath $pack -ManifestPath $selectedManifest -ExpectedPckSize $size -ExpectedPckSha256 $hash 2>&1)
         $gateCode=$LASTEXITCODE

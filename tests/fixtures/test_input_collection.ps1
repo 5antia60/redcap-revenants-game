@@ -8,12 +8,15 @@ $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $engine = Join-Path $root '.tools/godot/Godot_v4.7.2-stable_win64_console.exe'
 $version = @(& $engine --version) -join "`n"
 if ($LASTEXITCODE -ne 0 -or $version.Trim() -cne '4.7.2.stable.official.ed1daf0bf') { throw 'Engine fixa incompatível.' }
-$destination = Join-Path $root ('.tools/s1/collection-mutations-' + [guid]::NewGuid().ToString('N'))
+$destination = Join-Path $root ('.tools/s2/collection-mutations-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $destination | Out-Null
 $files = @('project.godot', 'src/game/main.tscn', 'src/arenas/movement_lab.tscn', 'src/arenas/movement_lab.gd',
     'src/player/player.tscn', 'src/player/player.gd', 'src/player/player_input.gd', 'src/player/input_state.gd',
-    'tests/fixtures/test_player_input_collection.gd', 'tests/fixtures/run_input_collection.gd')
-$cases = @('normal', 'no_initial_focus', 'no_enumeration', 'wrong_axis', 'wrong_device', 'held_key_false')
+    'tests/fixtures/test_player_input_collection.gd', 'tests/fixtures/run_input_collection.gd',
+    'src/player/action_state.gd', 'src/combat/health.gd', 'src/combat/melee_hit.gd',
+    'src/arenas/training_target.gd', 'src/arenas/training_target.tscn', 'src/arenas/damage_zone.gd', 'src/game/main.gd')
+$cases = @('normal', 'no_initial_focus', 'no_enumeration', 'wrong_axis', 'wrong_device', 'held_key_false',
+    'no_button_collection', 'wrong_button_device', 'held_button_bypass', 'mixed_device_edges')
 $results = @()
 $failures = 0
 function Replace-One([string]$Source, [string]$Old, [string]$New) {
@@ -36,8 +39,8 @@ foreach ($case in $cases) {
             $marker = 'inicialização consulta Window'
         }
         'no_enumeration' {
-            $old = "func _physics_process(_delta: float) -> void:`n`tfor device: int in _read_connected_joypads():"
-            $new = "func _physics_process(_delta: float) -> void:`n`tfor device: int in PackedInt32Array():"
+            $old = "func _physics_process(_delta: float) -> void:`n`t_button_edges.clear()`n`tfor device: int in _read_connected_joypads():"
+            $new = "func _physics_process(_delta: float) -> void:`n`t_button_edges.clear()`n`tfor device: int in PackedInt32Array():"
             $source = Replace-One $source $old $new
         }
         'wrong_axis' {
@@ -49,6 +52,25 @@ foreach ($case in $cases) {
         'held_key_false' {
             $source = Replace-One $source 'return Input.is_physical_key_pressed(key)' 'return false'
             $marker = 'consulta global de tecla retida bloqueia'
+        }
+        'no_button_collection' {
+            $source = Replace-One $source '_collect_buttons(device)' 'pass # Coleta removida somente na cópia.'
+            $marker = 'botão oeste do ID37 inicia golpe'
+        }
+        'wrong_button_device' {
+            $source = Replace-One $source '_read_joy_button_pressed(device, button)' '_read_joy_button_pressed(0, button)'
+            $marker = 'botão oeste do ID37 inicia golpe'
+        }
+        'held_button_bypass' {
+            $source = Replace-One $source 'previous or sample.blocked_buttons.has(button) or not focus_active' 'previous or not focus_active'
+            $marker = 'botão retido exige soltura'
+        }
+        'mixed_device_edges' {
+            # Restaura apenas o OR global indevido na cópia isolada; o teste
+            # deve acusar fase/serial/custo, não falha de parse ou da fixture.
+            $source = Replace-One $source '_button_edges[device].attack = true' "_button_edges[device].attack = true`n`t`t`t`t_attack_edge = true"
+            $source = Replace-One $source '_button_edges[device].dodge = true' "_button_edges[device].dodge = true`n`t`t`t`t_dodge_edge = true"
+            $marker = 'simultâneos publicam somente ação/serial/custo'
         }
     }
     if ($case -ne 'normal') { [IO.File]::WriteAllText($adapter, $source, $utf8) }
@@ -66,6 +88,6 @@ foreach ($case in $cases) {
     Write-Host $results[-1]
 }
 [IO.File]::WriteAllText((Join-Path $destination 'summary.txt'), ($results -join "`n") + "`n", $utf8)
-Write-Host "Collection mutations: 6 casos, $failures divergências; logs=$destination"
+Write-Host "Collection mutations: $($cases.Count) casos, $failures divergências; logs=$destination"
 if ($failures -gt 0) { exit 1 }
 exit 0

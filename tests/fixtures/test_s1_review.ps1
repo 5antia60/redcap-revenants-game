@@ -15,13 +15,16 @@ $version = @(& $engine --version) -join "`n"
 if ($LASTEXITCODE -ne 0 -or $version.Trim() -cne '4.7.2.stable.official.ed1daf0bf') {
     throw 'Engine fixa incompatível; nenhum fallback permitido.'
 }
-$destination = Join-Path $root ('.tools/s1/review-fixtures/' + $Stage.ToLowerInvariant() + '-' + [guid]::NewGuid().ToString('N'))
+$destination = Join-Path $root ('.tools/s2/review-fixtures/' + $Stage.ToLowerInvariant() + '-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $destination | Out-Null
 $files = @('project.godot', 'export_presets.cfg', 'src/game/foundation.tscn',
     'src/player/input_state.gd', 'src/player/player.gd', 'src/player/player.tscn',
     'src/game/main.tscn', 'src/arenas/movement_lab.tscn', 'src/arenas/movement_lab.gd', 'src/player/player_input.gd',
     'tests/run_tests.gd', 'tests/unit/test_input_state.gd', 'tests/integration/test_player_motion.gd',
-    'tests/integration/test_movement_lab.gd', 'tests/fixtures/test_player_input_collection.gd')
+    'tests/integration/test_movement_lab.gd', 'tests/fixtures/test_player_input_collection.gd',
+    'src/player/action_state.gd', 'src/combat/health.gd', 'src/combat/melee_hit.gd',
+    'src/arenas/training_target.gd', 'src/arenas/training_target.tscn', 'src/arenas/damage_zone.gd', 'src/game/main.gd',
+    'tests/unit/test_action_state.gd', 'tests/unit/test_health.gd', 'tests/integration/test_melee_hit.gd', 'tests/integration/test_combat_lab.gd')
 $cases = @('normal', 'missing_movement', 'missing_aim', 'runtime_subtest', 'runtime_module',
     'missing_module_run', 'multiple_ticks', 'invalid_speed')
 $driverFailures = 0

@@ -2,7 +2,9 @@ extends SceneTree
 ## PCKs locais inertes, construídos de fontes conhecidas. Não recebe packs externos.
 
 const SOURCES := ["src/player/input_state.gd", "src/player/player_input.gd", "src/player/player.gd",
-	"src/arenas/movement_lab.gd", "src/game/main.tscn", "src/player/player.tscn", "src/arenas/movement_lab.tscn"]
+	"src/arenas/movement_lab.gd", "src/game/main.tscn", "src/player/player.tscn", "src/arenas/movement_lab.tscn",
+	"src/player/action_state.gd", "src/combat/health.gd", "src/combat/melee_hit.gd", "src/arenas/training_target.gd",
+	"src/arenas/training_target.tscn", "src/arenas/damage_zone.gd", "src/game/main.gd"]
 const CASES := ["valid", "extra_script", "orphan_gdc", "foreign_remap", "external_remap", "cycle_remap",
 	"alias", "traversal_remap", "test_file", "tool_file", "docs_file", "env_file", "addon",
 	"missing_authorized", "changed_script", "embedded_script", "tool_annotation", "opaque_scene"]
@@ -14,7 +16,7 @@ func _initialize() -> void:
 		printerr("FIXTURE_WATCHDOG")
 		quit(1))
 	var args := OS.get_cmdline_user_args()
-	if args.size() != 1 or not args[0].begins_with("res://.tools/s1/pack-cases-") or ".." in args[0] or "\\" in args[0]:
+	if args.size() != 1 or not args[0].begins_with("res://.tools/s2/pack-cases-") or ".." in args[0] or "\\" in args[0]:
 		quit(1)
 		return
 	var destination: String = args[0]
@@ -41,7 +43,8 @@ func _build(destination: String, binary: String, case_name: String) -> void:
 		failed = true
 		return
 	_add(pack, "project.binary", binary)
-	if case_name == "valid":
+	# Negativas também têm metadados válidos: não podem falhar pelo motivo errado.
+	if true:
 		_add(pack, ".godot/global_script_class_cache.cfg", _write(destination.path_join("empty-global-cache.txt"), "list=[]\n".to_utf8_buffer()))
 		var uid := StreamPeerBuffer.new()
 		uid.put_u32(1)

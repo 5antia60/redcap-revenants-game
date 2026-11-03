@@ -13,16 +13,18 @@ $OutputEncoding = $utf8
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $engine = Join-Path $root '.tools/godot/Godot_v4.7.2-stable_win64_console.exe'
 $sources = @('src/player/input_state.gd', 'src/player/player_input.gd', 'src/player/player.gd',
-    'src/arenas/movement_lab.gd', 'src/game/main.tscn', 'src/player/player.tscn', 'src/arenas/movement_lab.tscn')
+    'src/arenas/movement_lab.gd', 'src/game/main.tscn', 'src/player/player.tscn', 'src/arenas/movement_lab.tscn',
+    'src/player/action_state.gd','src/combat/health.gd','src/combat/melee_hit.gd','src/arenas/training_target.gd',
+    'src/arenas/training_target.tscn','src/arenas/damage_zone.gd','src/game/main.gd')
 . (Join-Path $PSScriptRoot 'read_export_pack.ps1')
 
 function Write-SourceManifest([string]$Destination) {
     # Operação explícita sobre fonte congelada/revisada, não sobre inventário do PCK.
     $full = [IO.Path]::GetFullPath($Destination)
-    $boundary = [IO.Path]::GetFullPath((Join-Path $root '.tools/s1')) + [IO.Path]::DirectorySeparatorChar
+    $boundary = [IO.Path]::GetFullPath((Join-Path $root '.tools/s2')) + [IO.Path]::DirectorySeparatorChar
     if (-not $full.StartsWith($boundary, [StringComparison]::OrdinalIgnoreCase) -or
         (Test-Path -LiteralPath $full) -or -not (Test-Path -LiteralPath (Split-Path -Parent $full) -PathType Container)) {
-        throw 'Manifesto novo exige diretório existente sob .tools/s1 e destino não ocupado.'
+        throw 'Manifesto novo exige diretório existente sob .tools/s2 e destino não ocupado.'
     }
     $entries = @($sources | ForEach-Object {
         $source = Join-Path $root $_
@@ -40,7 +42,7 @@ function Invoke-PackAudit([string]$Pack, [string]$Manifest, [string]$ExpectedHas
     }
     try {
         $attestation = Invoke-S1PackInspection -PckPath ([IO.Path]::GetFullPath($Pack)) -ExpectedPckSize $ExpectedSize -ExpectedPckSha256 $ExpectedHash -ManifestPath ([IO.Path]::GetFullPath($Manifest))
-        $attestationPath = Join-Path $root ('.tools/s1/pack-attestation-' + [guid]::NewGuid().ToString('N') + '.json')
+        $attestationPath = Join-Path $root ('.tools/s2/pack-attestation-' + [guid]::NewGuid().ToString('N') + '.json')
         Write-S1NewJson $attestationPath $attestation
     } catch {
         return @{ Code = 1; Text = 'PREENGINE_REJECT: ' + $_.Exception.Message }
@@ -75,12 +77,12 @@ try {
     $version = @(& $engine --version) -join "`n"
     if ($LASTEXITCODE -ne 0 -or $version.Trim() -cne '4.7.2.stable.official.ed1daf0bf') { throw 'Engine fixa incompatível.' }
     $id = [guid]::NewGuid().ToString('N')
-    $evidence = Join-Path $root ('.tools/s1/audit-fixtures-' + $id)
+    $evidence = Join-Path $root ('.tools/s2/audit-fixtures-' + $id)
     New-Item -ItemType Directory -Path $evidence | Out-Null
     $manifest = Join-Path $evidence 'source-manifest.json'
     # Manifesto válido nasce ANTES das mutações conhecidas e nunca é regenerado por caso.
     Write-SourceManifest $manifest
-    $packsRelative = '.tools/s1/pack-cases-' + $id
+    $packsRelative = '.tools/s2/pack-cases-' + $id
     $packs = Join-Path $root $packsRelative
     $build = @(& $engine --headless --path $root --script 'res://tests/fixtures/build_pack_cases.gd' -- ('res://' + $packsRelative) 2>&1)
     $buildCode = $LASTEXITCODE
