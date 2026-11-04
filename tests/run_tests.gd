@@ -51,8 +51,10 @@ func _run() -> void:
 	check(await _test_scene() == true, "cena de fundação deve concluir")
 	for module_path: String in ["res://tests/unit/test_input_state.gd",
 		"res://tests/unit/test_action_state.gd", "res://tests/unit/test_health.gd",
+		"res://tests/unit/test_melee_chaser_state.gd",
 		"res://tests/integration/test_player_motion.gd", "res://tests/integration/test_movement_lab.gd",
-		"res://tests/integration/test_melee_hit.gd", "res://tests/integration/test_combat_lab.gd"]:
+		"res://tests/integration/test_melee_hit.gd", "res://tests/integration/test_combat_lab.gd",
+		"res://tests/integration/test_melee_chaser.gd"]:
 		check(await _run_module(module_path) == true, "chamada do módulo deve concluir: " + module_path)
 	if "--self-test-failure" in OS.get_cmdline_user_args():
 		check(false, "falha deliberada do runner")
