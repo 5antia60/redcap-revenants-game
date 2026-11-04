@@ -12,6 +12,18 @@ class PhysicsJob extends Node:
 		completed = job.call() == true
 		finished.emit()
 
+class FeedbackTicks extends Node:
+	signal finished
+	var player: Node
+	var budget: int
+	var observed: int = 0
+	func _physics_process(_delta: float) -> void:
+		observed += 1
+		if observed == budget:
+			player.set_physics_process(false)
+			set_physics_process(false)
+			finished.emit()
+
 func _job(tree: SceneTree, callback: Callable) -> bool:
 	var job := PhysicsJob.new()
 	job.job = callback
@@ -131,6 +143,7 @@ func run(tree: SceneTree, check: Callable) -> bool:
 	check.call(await _body_cases(tree, main, lab, player, check) == true, "S2: corpo nativo e suspensão devem concluir")
 	check.call(await _boundary_cases(tree, main, check) == true, "S2: travessias da proteção e do dash devem concluir")
 	check.call(_clock_cases(check) == true, "S2: relógio de produção deve concluir")
+	check.call(await _feedback_cases(tree, main, check) == true, "S2-feedback: apresentação aceita e ciclo de vida devem concluir")
 	viewport.free()
 	tree.paused = saved_pause
 	return true
@@ -357,3 +370,192 @@ func _freeze(node: Node) -> void:
 	node.set_physics_process(false)
 	for child: Node in node.get_children():
 		_freeze(child)
+
+
+func _numbers(player: Node) -> Array[String]:
+	var result: Array[String] = []
+	for child: Node in player.get_children():
+		if child is Label and str(child.name).begins_with("DamageNumber") and child.visible:
+			result.append(child.text)
+	return result
+
+
+func _fresh(tree: SceneTree, main: Node) -> Node:
+	main.restart_lab()
+	await tree.process_frame
+	var lab := main.get_node("MovementLab")
+	_freeze(lab)
+	lab.get_node("PlayerInput").set_focus_active(true)
+	main.set_paused(false)
+	lab.get_node("Actors/Player").audio_enabled = false
+	return lab
+
+
+func _native_feedback_ticks(tree: SceneTree, player: Node, budget: int) -> int:
+	var observer := FeedbackTicks.new()
+	observer.player = player
+	observer.budget = budget
+	observer.process_physics_priority = 20
+	tree.root.add_child(observer)
+	player.set_physics_process(true)
+	await observer.finished
+	var observed := observer.observed
+	await tree.process_frame
+	observer.free()
+	return observed
+
+
+func _feedback_cases(tree: SceneTree, main: Node, check: Callable) -> bool:
+	# Quebras detectadas: zona sobre atores; número fixo/solicitado; efeito antes
+	# da aceitação; relógio estendido; fila ilimitada; publicação após callback.
+	var lab := await _fresh(tree, main)
+	var player := lab.get_node("Actors/Player")
+	var zone := lab.get_node("DamageZone")
+	check.call(zone.get_index() < lab.get_node("Actors").get_index() and zone.z_index == 0
+		and player.z_index == 0 and lab.get_node("Actors").y_sort_enabled,
+		"S2-feedback: chão precede atores sem elevar jogador nem quebrar Y-sort")
+	check.call(lab.get_node("PlayerInput").process_physics_priority < player.process_physics_priority
+		and player.process_physics_priority < zone.process_physics_priority,
+		"S2-feedback: ordem visual não modifica adaptador/corpo/zona físicos")
+	player.position = zone.position
+	check.call(await _job(tree, func() -> bool:
+		player._physics_process(1.0 / 60.0)
+		zone._physics_process(0.36)
+		return true), "S2-feedback: recepção da zona no processamento físico real")
+	check.call(player.health.current == 75 and _numbers(player) == ["−25"],
+		"S2-feedback: pulso aceito100→75 publica perda25 no corpo dentro da zona")
+	check.call(is_equal_approx(player.reaction_remaining, 0.20), "S2-feedback: marca corporal inicia0,20s")
+	check.call(player.receive_hit(7) and player.health.current == 68 and _numbers(player) == ["−25", "−7"],
+		"S2-feedback: segundo dano tem número próprio, não texto25 nem soma")
+	check.call(player.receive_hit(3) and _numbers(player) == ["−3", "−7"],
+		"S2-feedback: terceiro dano substitui somente slot mais antigo")
+	var labels := 0
+	for child: Node in player.get_children():
+		if child is Label and str(child.name).begins_with("DamageNumber"):
+			labels += 1
+	check.call(labels == 2, "S2-feedback: dois slots fixos, sem armazenamento de nós crescente")
+	var phase: int = player.action_state.phase
+	for amount: int in [0, -1, 1001]:
+		check.call(not player.receive_hit(amount) and _numbers(player) == ["−3", "−7"],
+			"S2-feedback: dano inválido não publica nem troca slot")
+	main.set_paused(true)
+	var reaction: float = player.reaction_remaining
+	check.call(not player.receive_hit(9), "S2-feedback: pausa recusa tentativa")
+	player._physics_process(0.4)
+	await tree.process_frame
+	check.call(player.reaction_remaining == reaction and _numbers(player) == ["−3", "−7"],
+		"S2-feedback: pausa congela efeitos existentes")
+	main.set_paused(false)
+	check.call(_numbers(player) == ["−3", "−7"] and player.action_state.phase == phase,
+		"S2-feedback: retorno não cria evento nem muda fase")
+	for tick in range(12):
+		check.call(await _job(tree, func() -> bool:
+			player._physics_process(1.0 / 60.0)
+			return true), "S2-feedback: tick corporal de expiração")
+	check.call(player.reaction_remaining == 0.0 and _numbers(player) == ["−3", "−7"],
+		"S2-feedback: marca acaba0,20s, números permanecem")
+	for tick in range(24):
+		await _job(tree, func() -> bool:
+			player._physics_process(1.0 / 60.0)
+			return true)
+	check.call(_numbers(player).is_empty() and player.health.current == 65,
+		"S2-feedback: números acabam0,60s sem novo dano, iframe ou fila atrasada")
+	for amount: int in [0, -1, 1001]:
+		check.call(not player.receive_hit(amount) and _numbers(player).is_empty() and player.reaction_remaining == 0.0,
+			"S2-feedback: inválido não inicia efeito numa apresentação vazia")
+	player.queue_actions(false, true)
+	await _job(tree, func() -> bool:
+		player._physics_process(0.04)
+		return true)
+	check.call(player.action_state.invulnerable and not player.receive_hit(25)
+		and _numbers(player).is_empty() and player.reaction_remaining == 0.0,
+		"S2-feedback: proteção recusa dano sem marca/número")
+	player.interrupt_actions()
+	check.call(player.receive_hit(60) and player.health.current == 5 and _numbers(player) == ["−60"],
+		"S2-feedback: sobrevida limitada ainda mostra perda efetiva")
+	check.call(player.receive_hit(25) and player.health.current == 0 and _numbers(player).is_empty()
+		and player.reaction_remaining == 0.0 and not player.receive_hit(1),
+		"S2-feedback: sobreletal limita vida, morte limpa efeitos sem prometer25 de perda")
+	lab = await _fresh(tree, main)
+	player = lab.get_node("Actors/Player")
+	check.call(_numbers(player).is_empty() and player.reaction_remaining == 0.0, "S2-feedback: reinício sem resíduos")
+	# Health emite changed sincronamente. Dano aninhado não integra a perda externa.
+	var entered := [false]
+	player.health.changed.connect(func(_life: int, _maximum: int) -> void:
+		if not entered[0]:
+			entered[0] = true
+			player.receive_hit(7))
+	check.call(player.receive_hit(25) and player.health.current == 68 and _numbers(player) == ["−7", "−25"],
+		"S2-feedback: callback reentrante não transforma25 em32")
+	check.call(player.receive_hit(3) and _numbers(player) == ["−7", "−3"],
+		"S2-feedback: ordem causal, não ordem de retorno, define slot mais antigo")
+	lab = await _fresh(tree, main)
+	player = lab.get_node("Actors/Player")
+	var depth := [0]
+	player.health.changed.connect(func(_life: int, _maximum: int) -> void:
+		if depth[0] < 2:
+			depth[0] += 1
+			player.receive_hit(7 if depth[0] == 1 else 3))
+	check.call(player.receive_hit(25) and player.health.current == 65 and _numbers(player) == ["−3", "−7"],
+		"S2-feedback: três eventos reentrantes retêm apenas dois mais recentes, sem publicar25 atrasado")
+	check.call(player.receive_hit(2) and _numbers(player) == ["−3", "−2"],
+		"S2-feedback: próximo evento substitui7, não o evento3 mais recente")
+	# Agora o próprio callback do jogador é agendado pela engine, sem chamada
+	# manual: efeitos têm prazos independentes e não estendem proteção/custos.
+	lab = await _fresh(tree, main)
+	player = lab.get_node("Actors/Player")
+	player.position = Vector2(800, 500)
+	check.call(player.receive_hit(25), "S2-feedback: preparar relógio nativo")
+	check.call(await _native_feedback_ticks(tree, player, 6) == 6, "S2-feedback: seis callbacks reais sem tick extra")
+	check.call(player.receive_hit(7), "S2-feedback: dano próximo após0,10s")
+	check.call(await _native_feedback_ticks(tree, player, 6) == 6 and player.reaction_remaining > 0.09,
+		"S2-feedback: segundo evento reinicia marca sem reiniciar primeiro número")
+	check.call(await _native_feedback_ticks(tree, player, 23) == 23 and _numbers(player) == ["−25", "−7"],
+		"S2-feedback: primeiro número existe até tick35")
+	check.call(await _native_feedback_ticks(tree, player, 1) == 1 and _numbers(player) == ["−7"],
+		"S2-feedback: tick36 expira só primeiro número")
+	check.call(await _native_feedback_ticks(tree, player, 6) == 6 and _numbers(player).is_empty()
+		and player.reaction_remaining == 0.0 and player.health.current == 68 and not player.action_state.invulnerable,
+		"S2-feedback: segundo expira no próprio prazo sem proteção/dano extra")
+	check.call(player.receive_hit(7), "S2-feedback: preparar resíduo antes do reinício")
+	main.restart_lab()
+	check.call(_numbers(player).is_empty() and player.reaction_remaining == 0.0 and not player.receive_hit(25),
+		"S2-feedback: reinício limpa arena antiga antes da substituição diferida")
+	await tree.process_frame
+	lab = await _fresh(tree, main)
+	player = lab.get_node("Actors/Player")
+	player.health.changed.connect(func(_life: int, _maximum: int) -> void: player.set_control_enabled(true))
+	check.call(player.receive_hit(25) and _numbers(player) == ["−25"],
+		"S2-feedback: reafirmar controle já habilitado não é suspensão nem apaga evento aceito")
+	for callback_kind: String in ["pause", "pause-return", "restart", "death", "disable", "replace-health"]:
+		lab = await _fresh(tree, main)
+		player = lab.get_node("Actors/Player")
+		var original_health: RefCounted = player.health
+		var fired := [false]
+		original_health.changed.connect(func(_life: int, _maximum: int) -> void:
+			if fired[0]:
+				return
+			fired[0] = true
+			if callback_kind == "pause":
+				main.set_paused(true)
+			elif callback_kind == "pause-return":
+				main.set_paused(true)
+				main.set_paused(false)
+			elif callback_kind == "restart":
+				main.restart_lab()
+			elif callback_kind == "death":
+				player.receive_hit(100)
+			elif callback_kind == "disable":
+				player.set_control_enabled(false)
+			elif callback_kind == "replace-health":
+				player.health = load("res://src/combat/health.gd").new())
+		check.call(player.receive_hit(25) and original_health.current == (0 if callback_kind == "death" else 75),
+			"S2-feedback: callback não muda retorno da perda aceita: " + callback_kind)
+		check.call(_numbers(player).is_empty() and player.reaction_remaining == 0.0,
+			"S2-feedback: callback invalida publicação tardia: " + callback_kind)
+		if callback_kind == "restart":
+			await tree.process_frame
+			player = main.get_node("MovementLab/Actors/Player")
+			check.call(player.health.current == 100 and _numbers(player).is_empty(),
+				"S2-feedback: arena nova não recebe evento antigo")
+	return true

@@ -15,6 +15,22 @@ class Step extends Node:
 		completed = callback.call() == true
 		finished.emit()
 
+class DamageTicks extends Node:
+	signal finished
+	var player: Node
+	var zone: Node
+	var budget: int
+	var observed: int = 0
+	var elapsed: float = 0.0
+	func _physics_process(delta: float) -> void:
+		observed += 1
+		elapsed += delta
+		if observed == budget:
+			player.set_physics_process(false)
+			zone.set_physics_process(false)
+			set_physics_process(false)
+			finished.emit()
+
 func _initialize() -> void:
 	_run.call_deferred()
 
@@ -23,6 +39,32 @@ func _check(condition: bool, message: String) -> void:
 	if not condition:
 		failed = true
 		printerr("CAPTURE_FAIL: ", message)
+
+
+func _reserve_destination(destination: String) -> bool:
+	if DirAccess.dir_exists_absolute(destination) or FileAccess.file_exists(destination):
+		_check(false, "destino de captura ocupado")
+		quit(1)
+		return false
+	var created := DirAccess.make_dir_recursive_absolute(destination) == OK
+	_check(created, "criar destino novo")
+	if not created:
+		quit(1)
+	return created
+
+
+func _save_capture(image: Image, path: String) -> bool:
+	# Recusa uma colisão já observável. Este check seguido de save_png não é
+	# criação atômica nem proteção contra troca concorrente após a verificação.
+	if FileAccess.file_exists(path) or DirAccess.dir_exists_absolute(path):
+		_check(false, "arquivo de captura ocupado")
+		quit(1)
+		return false
+	var saved := image.save_png(path) == OK
+	_check(saved, "salvar PNG nativo")
+	if not saved:
+		quit(1)
+	return saved
 
 func _freeze(node: Node) -> void:
 	node.set_physics_process(false)
@@ -71,15 +113,18 @@ func _run() -> void:
 		printerr("CAPTURE_WATCHDOG")
 		quit(1))
 	var args := OS.get_cmdline_user_args()
+	if args.size() == 2 and args[0] in ["720", "1080"] and args[1] in ["damage-red", "damage-green", "damage-confirm"]:
+		await _damage_run(BASE if args[0] == "720" else Vector2i(1920, 1080), args[1])
+		return
 	_check(args.size() == 1 and args[0] in ["720", "1080"], "escolha720/1080 explícita")
 	_check(DisplayServer.get_name() != "headless" and RenderingServer.get_current_rendering_method() == "gl_compatibility", "janela e Compatibility reais")
 	if failed:
 		quit(1)
 		return
 	var target := BASE if args[0] == "720" else Vector2i(1920, 1080)
-	var destination := "res://.tools/s2/captures/task3-correction1-%s-%s" % [args[0], Time.get_ticks_usec()]
-	_check(not DirAccess.dir_exists_absolute(destination), "destino novo")
-	_check(DirAccess.make_dir_recursive_absolute(destination) == OK, "criar destino novo")
+	var destination := "res://.tools/s2-feedback-dano/legacy-capture-%s-%s" % [args[0], Time.get_ticks_usec()]
+	if not _reserve_destination(destination):
+		return
 	root.mode = Window.MODE_WINDOWED
 	root.borderless = true
 	root.current_screen = 0
@@ -250,8 +295,11 @@ func _run() -> void:
 				_check(button.is_visible_in_tree() and Rect2(Vector2.ZERO, Vector2(BASE)).encloses(button.get_global_rect()), "menu visível dentro da base")
 			_check(main._continue.has_focus(), "Continuar mostra foco determinístico")
 		var path := destination.path_join(stage + ".png")
-		_check(not FileAccess.file_exists(path), "não sobrescrever captura")
-		_check(image.save_png(path) == OK, "salvar PNG nativo")
+		if not _save_capture(image, path):
+			main.free()
+			evidence.free()
+			paused = saved_pause
+			return
 		var focused := root.gui_get_focus_owner()
 		print("CAPTURE_NAV stage=%s paused=%s focus=%s device=%s confirming=%s attempt=%s" % [
 			stage, paused, focused.text if focused is Button else "nenhum", adapter.active_device, main._confirming, lab.get_instance_id()])
@@ -264,3 +312,180 @@ func _run() -> void:
 	paused = saved_pause
 	print("CAPTURE_RESULT: failed=%s checks=%s" % [failed, checks])
 	quit(1 if failed else 0)
+
+
+func _damage_run(target: Vector2i, mode: String) -> void:
+	_check(DisplayServer.get_name() != "headless" and RenderingServer.get_current_rendering_method() == "gl_compatibility", "janela nativa Compatibility")
+	if failed:
+		quit(1)
+		return
+	var destination := "res://.tools/s2-feedback-dano/%s-%s-%s" % [mode, target.y, Time.get_ticks_usec()]
+	if not _reserve_destination(destination):
+		return
+	root.mode = Window.MODE_WINDOWED
+	root.borderless = true
+	root.size = target
+	var main = load("res://src/game/main.tscn").instantiate()
+	main.child_entered_tree.connect(func(child: Node) -> void:
+		if child.name == "MovementLab":
+			child.ready.connect(func() -> void: _freeze(child)))
+	root.add_child(main)
+	var lab: Node = main.get_node("MovementLab")
+	_freeze(lab)
+	var player: Node = lab.get_node("Actors/Player")
+	var zone: Node = lab.get_node("DamageZone")
+	lab.get_node("PlayerInput").set_focus_active(true)
+	main.set_paused(false)
+	player.audio_enabled = false
+	player.position = zone.position
+	player.apply_intent(Vector2.ZERO, Vector2.RIGHT)
+	_check(await _step(func() -> bool:
+		player._physics_process(1.0 / 60.0)
+		zone._physics_process(0.34)
+		return true), "contato físico na zona antes do pulso")
+	if not await _damage_png(destination, "01-dentro-aviso", lab, player, 0.0, target):
+		return
+	_check(await _step(func() -> bool:
+		player._physics_process(1.0 / 60.0)
+		zone._physics_process(0.02)
+		return true), "pulso da zona após corpo no tick real")
+	_check(player.health.current == 75, "pulso real aceito100→75 com corpo dentro")
+	if not await _damage_png(destination, "02-pos-dano25-t0", lab, player, 0.0, target):
+		return
+	if mode != "damage-red":
+		_check(_damage_numbers(player) == ["−25"] and is_equal_approx(player.reaction_remaining, 0.20), "feedback inicial aceito")
+	if mode == "damage-green":
+		var elapsed := 0.0
+		for sample: Array in [[6, "03-pos-dano-t100ms"], [5, "04-marca-t183ms"], [1, "05-sem-marca-t200ms"],
+			[23, "06-numero-t583ms"], [1, "07-expirado-t600ms"]]:
+			elapsed += await _damage_ticks(player, zone, sample[0])
+			if not await _damage_png(destination, sample[1], lab, player, elapsed, target):
+				return
+		_check(_damage_numbers(player).is_empty() and player.reaction_remaining == 0.0 and player.health.current == 75,
+			"expiração nativa sem dano novo")
+		_check(player.receive_hit(7), "segundo valor válido")
+		if not await _damage_png(destination, "08-dano7", lab, player, 0.0, target):
+			return
+		main.set_paused(true)
+		var remaining: float = player.reaction_remaining
+		_check(not player.receive_hit(25), "pausa não recebe outro dano")
+		if not await _damage_png(destination, "09-pausa-congelada", lab, player, 0.0, target):
+			return
+		_check(player.reaction_remaining == remaining, "pausa conserva efeito")
+		main.set_paused(false)
+		if not await _damage_png(destination, "10-retorno-sem-evento", lab, player, 0.0, target):
+			return
+		_check(_damage_numbers(player) == ["−7"], "retorno preserva somente evento existente")
+		_check(player.receive_hit(3), "segundo slot")
+		if not await _damage_png(destination, "11-dois-slots", lab, player, 0.0, target):
+			return
+		_check(player.receive_hit(2), "terceiro evento")
+		if not await _damage_png(destination, "12-substitui-antigo", lab, player, 0.0, target):
+			return
+		_check(_damage_numbers(player) == ["−2", "−3"], "sem soma nem fila no terceiro evento")
+		lab = await _damage_reset(main)
+		player = lab.get_node("Actors/Player")
+		zone = lab.get_node("DamageZone")
+		if not await _damage_png(destination, "13-reinicio", lab, player, 0.0, target):
+			return
+		_check(_damage_numbers(player).is_empty() and player.health.current == 100, "reset limpa eventos")
+		player.position = zone.position
+		player.apply_intent(Vector2.ZERO, Vector2.RIGHT)
+		zone.advance_clock(0.34)
+		_check(await _step(func() -> bool:
+			player.queue_actions(false, true)
+			player._physics_process(0.04)
+			zone._physics_process(0.02)
+			return true), "tentativa protegida no pulso físico")
+		_check(player.action_state.invulnerable and player.health.current == 100 and _damage_numbers(player).is_empty(), "proteção recusa sem feedback")
+		if not await _damage_png(destination, "14-protecao-dentro-zona", lab, player, 0.04, target):
+			return
+		await _damage_ticks(player, zone, 5)
+		_check(not player.action_state.invulnerable and player.health.current == 100 and _damage_numbers(player).is_empty(), "fim de proteção não reaplica pulso consumido")
+		if not await _damage_png(destination, "15-fim-protecao-sem-falso-dano", lab, player, 0.123333, target):
+			return
+		player.interrupt_actions()
+		_check(player.receive_hit(95) and player.health.current == 5, "vida restante5")
+		if not await _damage_png(destination, "16-sobrevida5-perda95", lab, player, 0.0, target):
+			return
+		_check(player.receive_hit(25) and player.health.current == 0 and paused and _damage_numbers(player).is_empty()
+			and player.reaction_remaining == 0.0, "sobreletal perde só5 e limpa morte antes do menu")
+		if not await _damage_png(destination, "17-morte-sem-residuo", lab, player, 0.0, target):
+			return
+		lab = await _damage_reset(main)
+		player = lab.get_node("Actors/Player")
+		if not await _damage_png(destination, "18-reinicio-apos-morte", lab, player, 0.0, target):
+			return
+		player.position = Vector2(1100, 480)
+		if not await _damage_png(destination, "19-prop-oclusao-legitima-atras", lab, player, 0.0, target):
+			return
+		player.position = Vector2(1100, 550)
+		if not await _damage_png(destination, "20-prop-jogador-a-frente", lab, player, 0.0, target):
+			return
+	main.free()
+	paused = false
+	print("CAPTURE_RESULT: failed=%s checks=%s directory=%s" % [failed, checks, ProjectSettings.globalize_path(destination)])
+	quit(1 if failed else 0)
+
+
+func _damage_numbers(player: Node) -> Array[String]:
+	var numbers: Array[String] = []
+	for child: Node in player.get_children():
+		if child is Label and str(child.name).begins_with("DamageNumber") and child.visible:
+			numbers.append(child.text)
+	return numbers
+
+
+func _damage_reset(main: Node) -> Node:
+	main.restart_lab()
+	await process_frame
+	var lab: Node = main.get_node("MovementLab")
+	_freeze(lab)
+	lab.get_node("PlayerInput").set_focus_active(true)
+	main.set_paused(false)
+	lab.get_node("Actors/Player").audio_enabled = false
+	return lab
+
+
+func _damage_ticks(player: Node, zone: Node, budget: int) -> float:
+	# A engine agenda os callbacks de produção. Só a observação tem prioridade20,
+	# depois de corpo0/zona10, e congela exatamente no último tick do orçamento.
+	var observer := DamageTicks.new()
+	observer.player = player
+	observer.zone = zone
+	observer.budget = budget
+	observer.process_physics_priority = 20
+	root.add_child(observer)
+	player.set_physics_process(true)
+	zone.set_physics_process(true)
+	await observer.finished
+	_check(observer.observed == budget, "orçamento nativo sem tick extra")
+	var elapsed := observer.elapsed
+	await process_frame
+	observer.free()
+	return elapsed
+
+
+func _damage_png(destination: String, stage: String, lab: Node, player: Node, elapsed: float, target: Vector2i) -> bool:
+	player.get_node("Camera2D").force_update_scroll()
+	lab.refresh_status()
+	for frame in range(3):
+		await process_frame
+		await RenderingServer.frame_post_draw
+	var image := root.get_texture().get_image()
+	var client := DisplayServer.window_get_size(root.get_window_id())
+	_check(root.size == target and client == target and image.get_size() == target and root.content_scale_size == BASE,
+		"janela/cliente/imagem nativos sem upscale")
+	var path := destination.path_join(stage + ".png")
+	if not _save_capture(image, path):
+		return false
+	var numbers := _damage_numbers(player)
+	for child: Node in player.get_children():
+		if child is Label and str(child.name).begins_with("DamageNumber"):
+			print("DAMAGE_SLOT stage=%s slot=%s visible=%s position=%s size=%s center=%s font=%s outline=%s" % [
+				stage, child.name, child.visible, child.position, child.size, child.position + child.size / 2.0,
+				child.get_theme_font_size("font_size"), child.get_theme_constant("outline_size")])
+	print("DAMAGE_CAPTURE stage=%s elapsed_physics=%.6f window=%s client=%s image=%s feet=%s zone=%s life=%s reaction=%.6f numbers=%s protected=%s paused=%s path=%s" % [
+		stage, elapsed, root.size, client, image.get_size(), player.position, lab.get_node("DamageZone").position,
+		player.health.current, player.reaction_remaining, numbers, player.action_state.invulnerable, paused, ProjectSettings.globalize_path(path)])
+	return true

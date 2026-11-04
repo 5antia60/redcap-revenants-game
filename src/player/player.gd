@@ -26,6 +26,11 @@ var _generation: int = 0
 var _hit := MeleeHit.new()
 var _sound: AudioStreamPlayer
 var _sounded_serial: int = 0
+var _damage_labels: Array[Label] = []
+var _damage_remaining: Array[float] = [0.0, 0.0]
+var _damage_order: Array[int] = [0, 0]
+var _damage_serial: int = 0
+var _feedback_epoch: int = 0
 
 
 func _init() -> void:
@@ -36,6 +41,23 @@ func _ready() -> void:
 	_sound = AudioStreamPlayer.new()
 	_sound.volume_db = -20.0
 	add_child(_sound)
+	for slot in range(2):
+		var label := Label.new()
+		label.name = "DamageNumber%d" % (slot + 1)
+		# Caixa acima da recomendação inicial para liberar o rótulo da zona;
+		# a altura mínima da fonte continua sendo respeitada pelo Label.
+		label.position = Vector2(-50, -94 - slot * 24)
+		label.size = Vector2(100, 28)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.add_theme_font_size_override("font_size", 22)
+		label.add_theme_color_override("font_color", Color("f4d8a5"))
+		label.add_theme_color_override("font_outline_color", Color("182d36"))
+		label.add_theme_constant_override("outline_size", 2)
+		label.hide()
+		add_child(label)
+		_damage_labels.append(label)
 
 @onready var _aim_indicator: Node2D = $AimIndicator
 
@@ -60,7 +82,10 @@ func queue_actions(attack_pressed: bool, dodge_pressed: bool) -> void:
 
 
 func set_control_enabled(enabled: bool) -> void:
-	control_enabled = enabled and not health.dead
+	var next_enabled := enabled and not health.dead
+	if next_enabled != control_enabled:
+		_feedback_epoch += 1
+	control_enabled = next_enabled
 	_attack_pending = false
 	_dodge_pending = false
 	_move_intent = Vector2.ZERO
@@ -71,6 +96,8 @@ func interrupt_actions() -> void:
 	_generation += 1
 	action_state.interrupt()
 	active_snapshot = false
+	if not control_enabled:
+		_clear_damage_feedback()
 	set_control_enabled(control_enabled)
 	queue_redraw()
 
@@ -78,9 +105,62 @@ func interrupt_actions() -> void:
 func receive_hit(amount: int) -> bool:
 	if not _eligible() or action_state.invulnerable or amount < 1 or amount > 1000:
 		return false
-	reaction_remaining = 0.12
+	# Health atualiza vida antes de callbacks síncronos. Capturar a perda desta
+	# chamada, não a diferença ao retornar (que poderia incluir dano aninhado).
+	var receiver := health
+	var loss := mini(amount, receiver.current)
+	var generation := _generation
+	var epoch := _feedback_epoch
+	_damage_serial += 1
+	var serial := _damage_serial
+	var accepted := receiver.apply_damage(amount)
+	if accepted and health == receiver and _generation == generation and _feedback_epoch == epoch and _eligible():
+		_publish_damage(loss, serial)
+	return accepted
+
+
+func _publish_damage(loss: int, serial: int) -> void:
+	if _damage_labels.size() != 2:
+		return
+	var slot := 0 if _damage_remaining[0] == 0.0 else 1 if _damage_remaining[1] == 0.0 else (
+		0 if _damage_order[0] < _damage_order[1] else 1)
+	# Uma chamada externa pode retornar depois de dois eventos aninhados novos.
+	# Não substituir um deles pelo evento antigo nem criar uma fila de efeitos.
+	if _damage_remaining[slot] > 0.0 and _damage_order[slot] > serial:
+		return
+	_damage_order[slot] = serial
+	_damage_remaining[slot] = 0.60
+	_damage_labels[slot].text = "−%d" % loss
+	_damage_labels[slot].show()
+	reaction_remaining = 0.20
 	queue_redraw()
-	return health.apply_damage(amount)
+
+
+func _advance_damage_feedback(delta: float) -> void:
+	reaction_remaining = maxf(0.0, reaction_remaining - delta)
+	if reaction_remaining <= 0.000001:
+		reaction_remaining = 0.0
+	for slot in range(_damage_labels.size()):
+		_damage_remaining[slot] = maxf(0.0, _damage_remaining[slot] - delta)
+		if _damage_remaining[slot] <= 0.000001:
+			_damage_remaining[slot] = 0.0
+			_damage_labels[slot].hide()
+			_damage_labels[slot].text = ""
+
+
+func _clear_damage_feedback() -> void:
+	reaction_remaining = 0.0
+	for slot in range(_damage_labels.size()):
+		_damage_remaining[slot] = 0.0
+		_damage_order[slot] = 0
+		_damage_labels[slot].hide()
+		_damage_labels[slot].text = ""
+	queue_redraw()
+
+
+func _exit_tree() -> void:
+	_feedback_epoch += 1
+	_clear_damage_feedback()
 
 
 func _eligible() -> bool:
@@ -101,6 +181,7 @@ func _on_died() -> void:
 	_generation += 1
 	active_snapshot = false
 	set_control_enabled(false)
+	_clear_damage_feedback()
 	queue_redraw()
 	died.emit()
 
@@ -112,6 +193,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		queue_redraw()
 		return
+	_advance_damage_feedback(delta)
 	var dodge := _dodge_pending
 	var attack := _attack_pending
 	_attack_pending = false
@@ -139,7 +221,6 @@ func _physics_process(delta: float) -> void:
 		if accepted > 0 or _sounded_serial != serial:
 			_play_sound(accepted > 0)
 			_sounded_serial = serial
-	reaction_remaining = maxf(0.0, reaction_remaining - delta)
 	queue_redraw()
 
 
@@ -169,7 +250,10 @@ func _draw() -> void:
 		draw_arc(Vector2(0, -18), 25.0, 0, TAU, 32, Color("e8f4df"), 2.0)
 		draw_arc(Vector2(0, -18), 29.0, 0, TAU, 32, Color("e8f4df"), 2.0)
 	if reaction_remaining > 0.0:
-		draw_line(Vector2(-17, -44), Vector2(17, -44), Color("f4d8a5"), 3.0)
+		for side: float in [-1.0, 1.0]:
+			var mark := PackedVector2Array([Vector2(side * 15, -29), Vector2(side * 21, -22), Vector2(side * 15, -15)])
+			draw_polyline(mark, Color("182d36"), 4.0)
+			draw_polyline(mark, Color("f4d8a5"), 2.0)
 	if active_snapshot:
 		var points := _hit.sector_points(action_state.attack_direction)
 		draw_colored_polygon(points, Color(1.0, 0.86, 0.50, 0.38))

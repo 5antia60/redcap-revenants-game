@@ -46,6 +46,11 @@ shape = SubResource("Vertical")
 position = Vector2(1620, 500)
 shape = SubResource("Vertical")
 
+[node name="DamageZone" type="Node2D" parent="." node_paths=PackedStringArray("player")]
+position = Vector2(1320, 760)
+script = ExtResource("5_zone")
+player = NodePath("../Actors/Player")
+
 [node name="Actors" type="Node2D" parent="."]
 y_sort_enabled = true
 
@@ -112,11 +117,6 @@ position = Vector2(740, 260)
 position = Vector2(860, 260)
 [node name="Target3" parent="Actors" instance=ExtResource("4_target")]
 position = Vector2(980, 260)
-
-[node name="DamageZone" type="Node2D" parent="." node_paths=PackedStringArray("player")]
-position = Vector2(1320, 760)
-script = ExtResource("5_zone")
-player = NodePath("../Actors/Player")
 
 [node name="PlayerInput" type="Node" parent="." node_paths=PackedStringArray("player")]
 script = ExtResource("3_input")
