@@ -36,7 +36,7 @@ func _run() -> void:
 	root.current_screen = 0
 	root.position = DisplayServer.screen_get_position(0)
 	root.size = target
-	var main := load("res://src/game/main.tscn").instantiate() as Node2D
+	var main := preload("res://tests/fixtures/s3_lab_main.gd").instantiate()
 	root.add_child(main)
 	var lab := main.get_node("MovementLab")
 	var player := lab.get_node("Actors/Player") as CharacterBody2D

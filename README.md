@@ -3,12 +3,21 @@
 Roguelike de ação 2D com aparência isométrica e ambientação em um apocalipse urbano brasileiro. “Último Sol” é o título criativo provisório; o nome deste repositório não representa mudança automática da direção aprovada.
 
 ## Estado
-S0/S1 integradas pelo usuário; S1 aceita em sessão assistida com teclado/mouse e controle físico. O [PR3 da S2](https://github.com/5antia60/redcap-revenants-game/pull/3) também foi integrado pelo usuário em `df4077015cacb39b453aa3e7c8e62d705c3f0e61`, candidato local `0.1.0`. O aceite humano identificou pouca clareza do dano recebido sem áudio: a correção está no [PR4, S2-feedback-dano para main](https://github.com/5antia60/redcap-revenants-game/pull/4), aberto e ainda não integrado. Controle físico S2 permanece adiado e o reteste visual é obrigatório; não há tag, build publicada, inimigos completos, arte final ou autorização S3.
+S0/S1 integradas pelo usuário; S1 aceita em sessão assistida com teclado/mouse e controle físico. S2 e sua correção de dano foram integradas pelos [PR3](https://github.com/5antia60/redcap-revenants-game/pull/3) e [PR4](https://github.com/5antia60/redcap-revenants-game/pull/4), main-base `9ab4e1d9fcb7f6ddaed2c409a1d0c0a4bc9fdb2d`. Aceite dirigido do dano sem áudio em teclado/mouse registrado; controle físico S2 explicitamente adiado, não dispensado.
+
+S3 foi autorizada na branch `S3-primeiro-encontro`: um perseguidor corpo a corpo e um encontro com três inimigos. Fonte candidata `0.2.0` implementada/revalidada, revisão integrada favorável e entrega técnica no [PR5 para main](https://github.com/5antia60/redcap-revenants-game/pull/5), aberto/conferido após login. Debug/Release locais auditados e iniciados em staging somente EXE/PCK. Não é aceite S3, integração em main, tag ou build pública. Sem arsenal adicional, progressão ou arte final. Controle físico e avaliação humana de resposta/legibilidade permanecem pendentes.
+
+### Primeiro encontro S3
+Main agora abre uma arena própria, com três perseguidores: aproximação direta, preparação com direção fixada, golpe e recuperação. Cassetete/esquiva do jogador preservam regras S2. Aviso vazio, setor ativo hachurado e postura de recuperação são provisórios; setor hostil fica no chão abaixo dos corpos. Vida30 e três golpes de10 por inimigo; ataque hostil causa10, sem dano por encostar. Última morte válida conclui o encontro; morte do jogador encerra em derrota. Menu permite reinício e confirmação durante tentativa viva; pausa manual congela fases, enquanto perda de foco/desconexão interrompe ações antes da pausa. Reinício descarta estado/sinais antigos. O laboratório S2 permanece na fonte e nas regressões, fora do pack S3.
+
+Baixa visual aberta: rótulos de vida/dano podem disputar espaço. Ensaio12 não é encontro prometido nem legibilidade aprovada. Capturas nativas e headless não substituem teste humano em velocidade normal; métricas identificam a fonte medida e não certificam a meta final S7.
 
 ### Correção de leitura do dano
 A zona passa a ser chão abaixo dos atores. Dano recebido não letal aceito gera marcas angulares breves no tronco e número da perda efetiva acima do personagem, sem depender do HUD ou áudio. Marcas duram0,20s; números estáticos duram0,60s em até dois espaços, sem soma ou fila atrasada. Recusas por proteção, pausa, morte ou entrada inválida não criam efeito; morte e reinício limpam a apresentação. Não há novo intervalo de proteção, mudança de dano/colisão ou tremor/flash de tela. Esses valores visuais são escolhas técnicas reversíveis, não arte final S5.
 
-Os novos exports corretivos ficam em `.tools/s2/feedback-dano-final-e56708f07a7d4c04aaf6167e25f6913b/windows-debug/` e `windows-release/`, separados dos anteriores. **`builds/windows-release/` ainda contém a Release anterior e não deve ser usada para aprovar esta correção.** Ambos passaram auditoria e staging somente EXE/PCK por120frames/exit0; versão0.1.0 observada no HUD/menu das duas builds. Revisão integrada final da unidade favorável; reteste humano ainda pendente no contexto.
+Exports corretivos S2 históricos preservados em `.tools/s2/feedback-dano-final-e56708f07a7d4c04aaf6167e25f6913b/windows-debug/` e `windows-release/`, separados dos anteriores. Passaram auditoria/staging e reteste dirigido em teclado/mouse registrado. **Essas builds e `builds/windows-release/` não são S3 e não podem comprovar o encontro0.2.0.**
+
+Exports reais S3 atuais: `.tools/s3/unit2-export-6f95a8a546de4775b621c764f6a73af2/windows-debug/` e `windows-release/`. Ambos PCK77828bytes/SHA256 `0cf596ca4d92da5d9ef56c36c32d00101024f4755f72a6bb68d51e4ac07054d8`,17entradas/0falhas. Staging `.tools/s3/unit2-staging-314ab583fecf41429a24a78022aadff6/`: cada EXE iniciou com PCK apenas,120frames/exit0; captura separada3frames/exit0. Versão0.2.0 observada nas próprias builds, pausadas por falta de foco. Isso prova inicialização/identidade/versão, não interação humana, controle físico ou diversão.
 
 ## Documentação
 - [GDD](docs/GDD.md): visão, pilares, escopo e decisões de produto.
@@ -23,7 +32,7 @@ Os novos exports corretivos ficam em `.tools/s2/feedback-dano-final-e56708f07a7d
 
 ## Ferramentas
 ### Versões do jogo
-Usar Semantic Versioning enquanto o jogo evolui: primeira versão formal planejada `0.1.0` na S2; próximas entregas funcionais `0.2.0`, `0.3.0` e correções compatíveis incrementam PATCH. S0/S1 permanecem baselines históricos sem tags retroativas inventadas. Versão da aplicação não é a versão da engine. Metadado e identificação `0.1.0` estão presentes no candidato e foram observados no HUD/menu das duas builds reais; isso não constitui versão aceita, tag ou release.
+Usar Semantic Versioning enquanto o jogo evolui: S2 foi candidato `0.1.0`; S3 é candidato `0.2.0`, próxima entrega funcional normalmente incrementa MINOR, correção compatível incrementa PATCH. S0/S1 permanecem baselines históricos sem tags retroativas inventadas. Versão da aplicação não é a versão da engine. Metadado e capturas da fonte S3 identificam0.2.0; versão exata das futuras builds será conferida separadamente, sem inferir export, tag ou release.
 
 Cada versão aceita e integrada recebe tag anotada `vMAJOR.MINOR.PATCH` após validação do hash na main, nunca antecipadamente na branch. Não mover tags existentes, enviar tags em lote ou publicar release/build automaticamente. Prévia `-dev` identifica desenvolvimento; `1.0.0` exige aprovação de uma versão estável, não apenas encerramento de sprint.
 
@@ -40,7 +49,7 @@ powershell -NoProfile -File .\tests\test_wrappers.ps1
 powershell -NoProfile -File .\scripts\run.ps1
 ```
 
-Importação e testes positivos devem retornar 0. `run.ps1` abre Main S2; feche a janela para encerrar. WASD/setas ou analógico esquerdo movimentam; mouse ou analógico direito miram. LMB/botão oeste golpeia uma vez por pressão, fixando a direção no início; Espaço/botão sul esquiva, usando movimento ou última mira válida quando parado. Escape/Start pausa. A pausa manual conserva a fase; perda de foco/desconexão interrompe a ação e abre pausa. Ao continuar, solte e pressione novamente teclas/botões e neutralize os sticks. Teclado/mouse permitem recuperar após desconexão. Para abrir no editor, use o executável Godot com `--editor --path .`.
+Importação e testes positivos devem retornar 0. `run.ps1` abre Main S3 nesta branch; feche a janela para encerrar. WASD/setas ou analógico esquerdo movimentam; mouse ou analógico direito miram. LMB/botão oeste golpeia uma vez por pressão, fixando a direção no início; Espaço/botão sul esquiva, usando movimento ou última mira válida quando parado. Escape/Start pausa. A pausa manual conserva a fase; perda de foco/desconexão interrompe a ação e abre pausa. Ao continuar, solte e pressione novamente teclas/botões e neutralize os sticks. Teclado/mouse permitem recuperar após desconexão. Para abrir no editor, use o executável Godot com `--editor --path .`.
 
 Prova negativa do runner:
 ```powershell
@@ -61,19 +70,19 @@ Manter companions oficiais ao lado dos executáveis: consulta de versão usa o c
 powershell -NoProfile -File .\scripts\export.ps1 -Configuration Debug
 powershell -NoProfile -File .\scripts\export.ps1 -Configuration Release
 ```
-Saídas em `builds/windows-debug/` e `builds/windows-release/`: `foundation.exe` e `foundation.pck`, com companion console adicional no Debug. Esses nomes e o preset `Windows S0` são legados; a entrada agora é Main S2. Diretório não vazio é recusado: preserve explicitamente artefatos antes de repetir; sem limpeza/sobrescrita automática. Exporta somente Main e dependências, com PCK externo e scripts/cenas em texto. `.gitignore` não controla conteúdo do pack.
+Esses wrappers têm saídas fixas em `builds/windows-debug/` e `builds/windows-release/`: `foundation.exe` e `foundation.pck`, com companion console adicional no Debug. Nomes e preset `Windows S0` são legados; entrada da fonte atual é Main S3. Diretório não vazio é recusado: preserve artefatos, sem limpeza/sobrescrita automática. Não há parâmetro de destino nesses wrappers. Para S3, o coordenador usa a engine diretamente, com preset inspecionado e destino novo sob `.tools/s3/unit2-export-<id>/`, somente após gate da fonte. Exporta somente Main e dependências, PCK externo e scripts/cenas em texto. `.gitignore` não controla conteúdo do pack.
 
-Auditoria S2, somente para exportação local de procedência conhecida. Primeiro congele/revise as quatorze fontes (dez scripts e quatro cenas), prepare um manifesto externo novo a partir delas e registre o hash/tamanho do PCK da exportação controlada. Não regenere manifesto para aceitar divergência. Exemplo, da raiz, usando diretório existente e arquivo ainda ausente:
+Auditoria S3, somente para exportação local de procedência conhecida. Primeiro congele/revise as quatorze fontes (dez scripts e quatro cenas), prepare um manifesto externo novo a partir delas e registre hash/tamanho do PCK da exportação controlada. Contagem14 coincide com S2, mas cinco fontes são outras; manifesto S2 deve ser recusado. Não regenere manifesto para aceitar divergência. Exemplo, da raiz, usando diretório existente e arquivo ainda ausente:
 ```powershell
-$manifest = Join-Path $PWD '.tools/s2/reviewed-source-manifest.json'
+$manifest = Join-Path $PWD '.tools/s3/unit2-export-<id>/source-manifest.json'
 powershell -NoProfile -File .\tests\test_export_audit.ps1 -Mode PrepareManifest -ManifestPath $manifest
 # Para cada configuração, use o hash previamente registrado e o PCK congelado:
-$pack = Join-Path $PWD 'builds/windows-debug/foundation.pck'
+$pack = Join-Path $PWD '.tools/s3/unit2-export-<id>/windows-debug/foundation.pck'
 $expectedHash = '<SHA256 confiável registrado, em minúsculas>'
 $expectedSize = 0 # Substituir pelo tamanho externo registrado; zero é recusado.
 powershell -NoProfile -File .\tests\test_export_audit.ps1 -Mode Audit -ManifestPath $manifest -PckPath $pack -ExpectedPckSha256 $expectedHash -ExpectedPckSize $expectedSize
 ```
-Repita Audit para Release com seu caminho/tamanho/hash registrados. Não execute os placeholders literalmente. Antes da engine, o driver usa `tests/read_export_pack.ps1`: leitor offline limitado a PCK4/engine4.7.2, sem extração ou execução de conteúdo. Confere as quatorze fontes, cache global exatamente vazio e UID cache inteiramente decodificado com até quatorze referências somente às fontes autorizadas; então produz atestado externo novo. São admitidos apenas `project.binary`, `.godot/global_script_class_cache.cfg` e `.godot/uid_cache.bin` como metadados, totalizando dezessete entradas. Na engine, o auditor exige filesystem `PCK`, manifesto/atestado, inventário exato e identidade das fontes/metadados antes de ResourceLoader. Compilados, remaps opacos, extras ou manifesto divergente são recusados. Manifestos/packs S0/S1 não satisfazem o contrato S2. `project.binary` já é consumido antes do auditor: procedência, configuração e ausência de troca concorrente são pressupostos, não uma sandbox para packs de terceiros. SHA256/atestado local não autenticam origem. O auditor aceita também `0.1.0-dev`; conferir separadamente a versão exata nas builds candidatas.
+Repita Audit para Release com seu caminho/tamanho/hash registrados. Não execute os placeholders literalmente. Antes da engine, o driver usa `tests/read_export_pack.ps1`: leitor offline limitado a PCK4/engine4.7.2, sem extração ou execução de conteúdo. Confere as quatorze fontes, cache global exatamente vazio e UID cache inteiramente decodificado com até quatorze referências somente às fontes autorizadas; então produz atestado externo novo. São admitidos apenas `project.binary`, `.godot/global_script_class_cache.cfg` e `.godot/uid_cache.bin` como metadados, totalizando dezessete entradas. Na engine, o auditor exige filesystem `PCK`, manifesto/atestado, inventário exato e identidade das fontes/metadados antes de ResourceLoader. Compilados, remaps opacos, extras ou manifesto divergente são recusados. Manifestos/packs S0/S1/S2 não satisfazem o contrato S3. `project.binary` já é consumido antes do auditor: procedência, configuração e ausência de troca concorrente são pressupostos, não uma sandbox para packs de terceiros. SHA256/atestado local não autenticam origem. O auditor aceita também `0.2.0-dev`; conferir separadamente a versão exata nas builds candidatas.
 
 Regressões locais adicionais, em cópias novas e isoladas:
 ```powershell
@@ -87,8 +96,15 @@ Não execute `-Stage Baseline` na fonte corrigida; esse modo documenta retornos 
 Para iniciar fora do editor, copie apenas EXE/PCK (e companion se desejado) para diretório novo e execute `foundation.exe` de lá, sem `--path`/`--editor`. Mantenha EXE e PCK juntos. Builds locais não assinadas podem gerar avisos; não desabilitar proteções do Windows.
 
 ## Evidências e limites
-### Próximo roteiro manual S2 — somente após liberar o candidato
-O candidato S2 está implementado; a liberação para aceite depende dos gates técnicos registrados no contexto. O roteiro abaixo não afirma teste S2 pelo usuário. S1 já foi aceita em sessão assistida com controle físico e teclado/mouse, sem vídeo conforme autorização explícita.
+### Roteiro manual S3 — somente na build candidata liberada
+1. Reconhecer os três inimigos e seus avisos, golpe hachurado e recuperação; comparar alcance aparente com acerto real. Mover e mirar independentemente, golpear com nova pressão e esquivar de direção já anunciada.
+2. Repetir sem áudio e sem usar o HUD como única indicação de dano. Corpo/pés, proteção e reação devem continuar reconhecíveis no encontro3 em720/1080. Disputa de rótulos está documentada; se impedir compreender ação, manter aceite aberto.
+3. Pausar em preparação/golpe/recuperação e retomar sem comando preso. Perder foco e desconectar o controle ativo devem interromper ações e abrir pausa, mantendo recuperação por teclado/mouse. Controle físico será validado quando o usuário avisar disponibilidade; simulação não o substitui.
+4. Matar os três inimigos, verificando contagem e conclusão somente após o último válido; depois provocar derrota. Conferir que não há dano/ação nova depois do resultado. Não existe sequência de encontros/progressão S4.
+5. Reiniciar após resultado e pela pausa, confirmar/cancelar descarte e repetir três vezes: vida100, três inimigos30, relógios/entrada restabelecidos, sem duplicação de corpos/sinais. Relatar resposta, impacto, legibilidade e comandos perdidos; capturas e testes não aprovam diversão.
+
+### Roteiro S2 preservado — controle físico ainda pendente
+S2 e correção já foram integradas; teclado/mouse e reteste dirigido do dano sem som têm confirmações humanas registradas. Preserva-se o roteiro para completar controle físico quando disponível, sem repetir automaticamente os aceites válidos. S1 foi aceita em sessão com controle físico/teclado/mouse, sem vídeo conforme autorização explícita.
 
 1. Com teclado/mouse, mover com WASD/setas e atacar com botão esquerdo; no controle, analógico esquerdo move, direito mira e botão oeste (X/Quadrado) ataca. Circular os alvos e mirar em direção diferente do movimento.
 2. Pressionar ataque uma vez e depois segurar: uma nova pressão deve iniciar um novo golpe, sem repetição automática. Conferir contato perto da borda do setor e atrás de parede. Cada alvo começa com30 de vida e recebe10 por golpe aceito, nunca múltiplos danos daquele mesmo golpe.
@@ -100,7 +116,7 @@ O candidato S2 está implementado; a liberação para aceite depende dos gates t
 
 Na correção atual, coordenador confirmou fonte1408/0, negativa1409/1 exclusivamente deliberada/exit1 e parse do harness0. Revisões independentes de produção/UX favoráveis; seis casos isolados do harness comprovam recusa de colisões e preservação de sentinelas, sem garantia de atomicidade/TOCTOU. Novos Debug/Release auditados com17entradas/0falhas/exit0; PCKs65912bytes/SHA256 `a7f6585ccdfa60f9cc8b95a42aa342b349ec3f9ab2a8f4cb9d256a69b94a4a54`. Wrappers63/0 exit0 foram executados pelo usuário na base integrada, não repetidos nesta unidade. Resultados anteriores de coleta/mutações10/0, Corrected8/0, leitor56/0, auditorfixtures21/0 e atestados8/0 permanecem evidências dos caminhos inalterados, não novas execuções. Os cinco artefatos anteriores foram preservados no lugar e conferidos por tamanho/SHA256; não reexportar ou apagar históricos por rotina. Capturas720/1080 e revisões comprovam somente estados observados, não percepção humana contínua, hardware S2, áudio/feeling ou benchmark.
 
-S1 permanece aceita pelas confirmações humanas registradas no GDD; não repetir por rotina. S2 exige seu próprio roteiro nos dois dispositivos, inclusive resposta/impacto/legibilidade e áudio. Nenhum desses critérios é dispensado por simulação; S3 não está autorizada.
+S1 permanece aceita pelas confirmações humanas registradas no GDD; não repetir por rotina. S2/S3 exigem seus critérios pertinentes nos dois dispositivos, inclusive resposta/impacto/legibilidade e áudio; controle físico está adiado, não dispensado. S3 tem implementação autorizada, não aceite final nem autorização S4.
 
 `tests/capture_foundation.gd` salva textura direta de janela real1920×1080, sem desktop/upscale ou alteração do projeto. Tela0/borderless são configurações apenas do harness; ele mede cliente/imagem e preserva escala lógica1280×720/canvas_items. Captura em `.tools/s0/captures/task2-window-1920x1080.png`; recusa sobrescrever. Em outro host pode falhar por janela/renderer indisponível; fallback offscreen não equivale a janela1080. Inspeção desse PNG não é captura visual da build exportada.
 

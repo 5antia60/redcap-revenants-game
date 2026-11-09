@@ -1,10 +1,10 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="PackedScene" path="res://src/arenas/movement_lab.tscn" id="1_lab"]
+[ext_resource type="PackedScene" path="res://src/arenas/first_encounter.tscn" id="1_arena"]
 [ext_resource type="Script" path="res://src/game/main.gd" id="2_main"]
 
 [node name="Main" type="Node2D"]
 process_mode = 3
 script = ExtResource("2_main")
 
-[node name="MovementLab" parent="." instance=ExtResource("1_lab")]
+[node name="FirstEncounter" parent="." instance=ExtResource("1_arena")]

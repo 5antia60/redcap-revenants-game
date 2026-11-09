@@ -2,7 +2,7 @@ extends RefCounted
 ## Substitui somente leituras de hardware; coleta, foco, sinais e física são produção.
 ## A Window escondida tem has_focus=false real da engine, não foco simulado pelo stub.
 
-const MAIN := preload("res://src/game/main.tscn")
+const MAIN := preload("res://tests/fixtures/s3_lab_main.gd")
 
 class DeviceReads extends "res://src/player/player_input.gd":
 	var connected_ids := PackedInt32Array([37, 83])

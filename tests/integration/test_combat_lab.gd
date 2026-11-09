@@ -1,7 +1,7 @@
 extends RefCounted
 ## Integração sobre Main real; participantes ficam congelados entre passos observados.
 
-const MAIN := preload("res://src/game/main.tscn")
+const MAIN := preload("res://tests/fixtures/s3_lab_main.gd")
 
 class PhysicsJob extends Node:
 	signal finished
@@ -63,13 +63,12 @@ func run(tree: SceneTree, check: Callable) -> bool:
 	check.call(await _hud_cases(tree, lab, check) == true, "S2: HUD preserva descoberta espacial e ajuda dos dispositivos")
 	check.call(main.process_mode == Node.PROCESS_MODE_ALWAYS and lab.process_mode == Node.PROCESS_MODE_PAUSABLE,
 		"S2: Main ALWAYS não propaga processamento à arena")
-	check.call(str(ProjectSettings.get_setting("application/config/version", "")) == "0.1.0"
-		and lab.get_node("HUD/Panel/Margin/Rows/Title").text.contains("0.1.0")
-		and not lab.get_node("HUD/Panel/Margin/Rows/Title").text.contains("-dev"),
-		"S2: consumidor real mostra candidato0.1.0 sem confundir engine ou pré-versão")
+	var version := str(ProjectSettings.get_setting("application/config/version", ""))
+	check.call(version in ["0.2.0-dev", "0.2.0"]
+		and lab.get_node("HUD/Panel/Margin/Rows/Title").text.ends_with(version),
+		"S2: consumidor real mostra versão configurada exata, inclusive sufixo de desenvolvimento")
 	main.set_paused(true)
-	check.call(main._title.text.contains("0.1.0") and not main._title.text.contains("-dev"),
-		"S2: pausa identifica candidato0.1.0 configurado")
+	check.call(main._title.text.ends_with(version), "S2: pausa identifica versão configurada exata")
 	main.set_paused(false)
 	check.call(lab.get_node("Actors").y_sort_enabled, "S2: alvos reais compartilham Y-sort dos pés")
 	for target_name: String in ["Target1", "Target2", "Target3"]:

@@ -6,11 +6,11 @@ $utf8=[Text.UTF8Encoding]::new($false)
 $OutputEncoding=$utf8
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $full=[IO.Path]::GetFullPath($PckPath)
-if(-not $full.StartsWith((Join-Path $root '.tools/s2/pack-cases-'),[StringComparison]::OrdinalIgnoreCase) -or
+if(-not $full.StartsWith((Join-Path $root '.tools/s3/unit2-pack-cases-'),[StringComparison]::OrdinalIgnoreCase) -or
     [IO.Path]::GetFileName($full) -cne 'valid.pck'){throw 'Somente fixture valid.pck inerte conhecida; builds reais proibidos neste teste.'}
 . (Join-Path $root 'tests/read_export_pack.ps1')
 $attestation=Invoke-S1PackInspection -PckPath $full -ExpectedPckSize $ExpectedPckSize -ExpectedPckSha256 $ExpectedPckSha256 -ManifestPath $ManifestPath
-$destination=Join-Path $root ('.tools/s2/attestation-fixtures-'+[guid]::NewGuid().ToString('N'))
+$destination=Join-Path $root ('.tools/s3/unit2-attestation-fixtures-'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $destination | Out-Null
 $valid=Join-Path $destination 'valid.json'
 Write-S1NewJson $valid $attestation

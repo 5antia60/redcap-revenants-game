@@ -1,0 +1,39 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/enemies/melee_chaser.gd" id="1_chaser"]
+
+[sub_resource type="CircleShape2D" id="Circle_feet"]
+radius = 10.0
+
+[node name="MeleeChaser" type="CharacterBody2D"]
+process_physics_priority = 10
+collision_layer = 4
+collision_mask = 3
+motion_mode = 1
+script = ExtResource("1_chaser")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Circle_feet")
+
+[node name="GroundSector" type="Node2D" parent="."]
+visible = false
+z_index = -1
+z_as_relative = false
+
+[node name="Fill" type="Polygon2D" parent="GroundSector"]
+color = Color(0.75, 0.35, 0.18, 0.48)
+
+[node name="Outline" type="Line2D" parent="GroundSector"]
+default_color = Color(0.95686275, 0.84705883, 0.64705884, 1)
+
+[node name="Hatch0" type="Line2D" parent="GroundSector"]
+width = 2.0
+default_color = Color(0.95686275, 0.84705883, 0.64705884, 1)
+
+[node name="Hatch1" type="Line2D" parent="GroundSector"]
+width = 2.0
+default_color = Color(0.95686275, 0.84705883, 0.64705884, 1)
+
+[node name="Hatch2" type="Line2D" parent="GroundSector"]
+width = 2.0
+default_color = Color(0.95686275, 0.84705883, 0.64705884, 1)

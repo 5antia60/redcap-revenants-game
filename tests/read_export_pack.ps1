@@ -12,10 +12,10 @@
 # Não extrai arquivos, carrega recursos, executa engine ou autentica procedência.
 
 function Get-S1SourcePaths {
-    return @('res://src/player/input_state.gd','res://src/player/player_input.gd','res://src/player/player.gd',
-        'res://src/arenas/movement_lab.gd','res://src/game/main.tscn','res://src/player/player.tscn','res://src/arenas/movement_lab.tscn',
-        'res://src/player/action_state.gd','res://src/combat/health.gd','res://src/combat/melee_hit.gd',
-        'res://src/arenas/training_target.gd','res://src/arenas/training_target.tscn','res://src/arenas/damage_zone.gd','res://src/game/main.gd')
+    return @('res://src/player/input_state.gd','res://src/player/player_input.gd','res://src/player/player.gd','res://src/player/action_state.gd',
+        'res://src/player/player.tscn','res://src/combat/health.gd','res://src/combat/melee_hit.gd','res://src/game/main.gd','res://src/game/main.tscn',
+        'res://src/enemies/melee_chaser.gd','res://src/enemies/melee_chaser_state.gd','res://src/enemies/melee_chaser.tscn',
+        'res://src/arenas/first_encounter.gd','res://src/arenas/first_encounter.tscn')
 }
 
 function Assert-S1([bool]$Condition,[string]$Message) {
@@ -96,9 +96,9 @@ function Read-S1UidCache([byte[]]$Bytes) {
 }
 
 function Write-S1NewJson([string]$Path,[object]$Data) {
-    $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../.tools/s2'))+[IO.Path]::DirectorySeparatorChar
+    $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../.tools/s3'))+[IO.Path]::DirectorySeparatorChar
     $full=[IO.Path]::GetFullPath($Path)
-    Assert-S1 ($full.StartsWith($root,[StringComparison]::OrdinalIgnoreCase)) 'saída deve ficar sob .tools/s2'
+    Assert-S1 ($full.StartsWith($root+'unit2-',[StringComparison]::OrdinalIgnoreCase)) 'saída deve ficar sob .tools/s3/unit2-*'
     $parent=[IO.Path]::GetDirectoryName($full)
     while(($parent+[IO.Path]::DirectorySeparatorChar).StartsWith($root,[StringComparison]::OrdinalIgnoreCase)) {
         Assert-S1 ([IO.Directory]::Exists($parent)) 'diretório de saída deve existir'

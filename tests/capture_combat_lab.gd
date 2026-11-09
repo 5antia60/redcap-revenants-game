@@ -131,7 +131,7 @@ func _run() -> void:
 	root.position = DisplayServer.screen_get_position(0)
 	root.size = target
 	var saved_pause := paused
-	var main = load("res://src/game/main.tscn").instantiate()
+	var main = preload("res://tests/fixtures/s3_lab_main.gd").instantiate()
 	var initial_lab: Node = main.get_node("MovementLab")
 	var initial_adapter: Node = initial_lab.get_node("PlayerInput")
 	initial_adapter.set_script(DeviceReads)
@@ -325,7 +325,7 @@ func _damage_run(target: Vector2i, mode: String) -> void:
 	root.mode = Window.MODE_WINDOWED
 	root.borderless = true
 	root.size = target
-	var main = load("res://src/game/main.tscn").instantiate()
+	var main = preload("res://tests/fixtures/s3_lab_main.gd").instantiate()
 	main.child_entered_tree.connect(func(child: Node) -> void:
 		if child.name == "MovementLab":
 			child.ready.connect(func() -> void: _freeze(child)))

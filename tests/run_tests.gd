@@ -6,6 +6,12 @@ var checks: int = 0
 
 const MAIN_SCENE := "res://src/game/main.tscn"
 const FOUNDATION_SCENE := "res://src/game/foundation.tscn"
+const GROUPS := {
+	"movement": ["test_input_state", "test_player_motion", "test_movement_lab"],
+	"combat": ["test_action_state", "test_health", "test_melee_hit", "test_combat_lab"],
+	"enemies": ["test_melee_chaser_state", "test_melee_chaser"],
+	"encounter": ["test_first_encounter"],
+}
 const EXPECTED_BINDINGS := {
 	"move_left": ["key:65", "key:4194321", "axis:0:-1"],
 	"move_right": ["key:68", "key:4194323", "axis:0:1"],
@@ -33,9 +39,20 @@ func check(condition: bool, message: String) -> void:
 
 
 func _run() -> void:
-	# A suíte S2 completa percorre 309 frames a --fixed-fps 10 (30,9 s
-	# simulados). Manter margem finita para a regressão de múltiplos ticks;
-	# o executor também impõe timeout externo para bloqueios síncronos.
+	# O comando padrão mantém a suíte integral e40s. A fixture fixed-fps10
+	# executa todos os quatro grupos separadamente: tempo simulado não é real.
+	var args := OS.get_cmdline_user_args()
+	var group := ""
+	if args.size() == 2 and args[0] == "--test-group":
+		group = args[1]
+		check(GROUPS.has(group), "grupo de teste deve ser conhecido")
+		if not GROUPS.has(group):
+			quit(1)
+			return
+	elif not args.is_empty() and args != PackedStringArray(["--self-test-failure"]):
+		check(false, "argumentos do runner inválidos")
+		quit(1)
+		return
 	var watchdog := create_timer(40.0, true, false, true)
 	watchdog.timeout.connect(func() -> void:
 		printerr("FAIL: watchdog do runner excedeu 40 segundos")
@@ -51,12 +68,18 @@ func _run() -> void:
 	check(await _test_scene() == true, "cena de fundação deve concluir")
 	for module_path: String in ["res://tests/unit/test_input_state.gd",
 		"res://tests/unit/test_action_state.gd", "res://tests/unit/test_health.gd",
+		"res://tests/unit/test_melee_chaser_state.gd",
 		"res://tests/integration/test_player_motion.gd", "res://tests/integration/test_movement_lab.gd",
-		"res://tests/integration/test_melee_hit.gd", "res://tests/integration/test_combat_lab.gd"]:
+		"res://tests/integration/test_melee_hit.gd", "res://tests/integration/test_combat_lab.gd",
+		"res://tests/integration/test_melee_chaser.gd", "res://tests/integration/test_first_encounter.gd"]:
+		if not group.is_empty() and module_path.get_file().get_basename() not in GROUPS[group]:
+			continue
 		check(await _run_module(module_path) == true, "chamada do módulo deve concluir: " + module_path)
 	if "--self-test-failure" in OS.get_cmdline_user_args():
 		check(false, "falha deliberada do runner")
 	print("S0 + S1: %d verificações, %d falhas" % [checks, failures.size()])
+	if not group.is_empty():
+		print("TEST_GROUP_COMPLETE: ", group)
 	quit(0 if failures.is_empty() else 1)
 
 
@@ -113,7 +136,7 @@ func _test_export_preset() -> bool:
 	check(preset.get_value("preset.0", "script_export_mode", -1) == 0, "scripts devem ser texto auditável")
 	check(ProjectSettings.get_setting("editor/export/convert_text_resources_to_binary", true) == false,
 		"cenas devem preservar texto auditável")
-	check(preset.get_value("preset.0", "include_filter", "invalid") == "src/player/input_state.gd,src/player/action_state.gd,src/combat/health.gd,src/combat/melee_hit.gd",
+	check(preset.get_value("preset.0", "include_filter", "invalid") == "src/player/input_state.gd,src/player/action_state.gd,src/combat/health.gd,src/combat/melee_hit.gd,src/enemies/melee_chaser_state.gd",
 		"incluir explicitamente somente módulos locais sem wildcard de scripts")
 	var exclusions: String = preset.get_value("preset.0", "exclude_filter", "")
 	for path: String in ["docs/brief.md", "tests/run_tests.gd", "tests/.generated/probe.tscn",

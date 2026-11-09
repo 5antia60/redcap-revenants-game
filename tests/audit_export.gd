@@ -5,10 +5,10 @@ extends SceneTree
 
 const MAIN_SCENE := "res://src/game/main.tscn"
 const SCRIPTS := ["res://src/player/input_state.gd", "res://src/player/player_input.gd",
-	"res://src/player/player.gd", "res://src/arenas/movement_lab.gd", "res://src/player/action_state.gd",
-	"res://src/combat/health.gd", "res://src/combat/melee_hit.gd", "res://src/arenas/training_target.gd",
-	"res://src/arenas/damage_zone.gd", "res://src/game/main.gd"]
-const SCENES := [MAIN_SCENE, "res://src/player/player.tscn", "res://src/arenas/movement_lab.tscn", "res://src/arenas/training_target.tscn"]
+	"res://src/player/player.gd", "res://src/arenas/first_encounter.gd", "res://src/player/action_state.gd",
+	"res://src/combat/health.gd", "res://src/combat/melee_hit.gd", "res://src/enemies/melee_chaser.gd",
+	"res://src/enemies/melee_chaser_state.gd", "res://src/game/main.gd"]
+const SCENES := [MAIN_SCENE, "res://src/player/player.tscn", "res://src/arenas/first_encounter.tscn", "res://src/enemies/melee_chaser.tscn"]
 # Caches observados/decodificados offline antes da engine; sem wildcard .godot/**.
 const METADATA := ["res://project.binary", "res://.godot/global_script_class_cache.cfg", "res://.godot/uid_cache.bin"]
 var failures: Array[String] = []
@@ -60,7 +60,7 @@ func _run() -> void:
 		return
 	print("INVENTORY_OK: dez scripts/quatro cenas com identidade SHA256 externa")
 	_check(ProjectSettings.get_setting("application/run/main_scene", "") == MAIN_SCENE, "configuração deve selecionar Main")
-	_check(ProjectSettings.get_setting("application/config/version", "") in ["0.1.0-dev", "0.1.0"], "configuração preserva versão do candidato S2")
+	_check(ProjectSettings.get_setting("application/config/version", "") in ["0.2.0-dev", "0.2.0"], "configuração preserva versão S3")
 	for property: Dictionary in ProjectSettings.get_property_list():
 		_check(not String(property.name).begins_with("autoload/"), "autoload proibido")
 	if not failures.is_empty():
@@ -75,7 +75,7 @@ func _run() -> void:
 	_check(packed != null, "Main deve carregar")
 	if packed != null:
 		var instance := packed.instantiate()
-		_check(instance is Node2D and instance.has_node("MovementLab/Actors/Player"), "Main compõe laboratório e jogador")
+		_check(instance is Node2D and instance.has_node("FirstEncounter/Actors/Player") and instance.has_node("FirstEncounter/Actors/Enemy3"), "Main compõe encontro e jogador")
 		# Não entra na árvore: auditoria de composição não joga nem conecta dispositivos.
 		instance.free()
 	print("Audit: %d arquivos empacotados, %d falhas" % [files.size(), failures.size()])
