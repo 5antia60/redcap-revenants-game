@@ -15,7 +15,7 @@ $version = @(& $engine --version) -join "`n"
 if ($LASTEXITCODE -ne 0 -or $version.Trim() -cne '4.7.2.stable.official.ed1daf0bf') {
     throw 'Engine fixa incompatível; nenhum fallback permitido.'
 }
-$destination = Join-Path $root ('.tools/s2/review-fixtures/' + $Stage.ToLowerInvariant() + '-' + [guid]::NewGuid().ToString('N'))
+$destination = Join-Path $root ('.tools/s3/unit2-review-fixtures-' + $Stage.ToLowerInvariant() + '-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $destination | Out-Null
 $files = @('project.godot', 'export_presets.cfg', 'src/game/foundation.tscn',
     'src/player/input_state.gd', 'src/player/player.gd', 'src/player/player.tscn',
@@ -24,7 +24,11 @@ $files = @('project.godot', 'export_presets.cfg', 'src/game/foundation.tscn',
     'tests/integration/test_movement_lab.gd', 'tests/fixtures/test_player_input_collection.gd',
     'src/player/action_state.gd', 'src/combat/health.gd', 'src/combat/melee_hit.gd',
     'src/arenas/training_target.gd', 'src/arenas/training_target.tscn', 'src/arenas/damage_zone.gd', 'src/game/main.gd',
-    'tests/unit/test_action_state.gd', 'tests/unit/test_health.gd', 'tests/integration/test_melee_hit.gd', 'tests/integration/test_combat_lab.gd')
+    'tests/unit/test_action_state.gd', 'tests/unit/test_health.gd', 'tests/integration/test_melee_hit.gd', 'tests/integration/test_combat_lab.gd',
+    'src/enemies/melee_chaser.gd','src/enemies/melee_chaser_state.gd','src/enemies/melee_chaser.tscn',
+    'src/arenas/first_encounter.gd','src/arenas/first_encounter.tscn','tests/fixtures/s3_lab_main.gd',
+    'tests/unit/test_melee_chaser_state.gd','tests/integration/test_melee_chaser.gd','tests/integration/test_first_encounter.gd',
+    'tests/fixtures/s3_input_reads.gd','tests/fixtures/s3_native_ticks.gd')
 $cases = @('normal', 'missing_movement', 'missing_aim', 'runtime_subtest', 'runtime_module',
     'missing_module_run', 'multiple_ticks', 'invalid_speed')
 $driverFailures = 0
@@ -87,14 +91,27 @@ func run(tree: SceneTree, check: Callable) -> bool:
         [IO.File]::WriteAllText((Join-Path $fixture 'tests/integration/test_player_motion.gd'), $probe, $utf8)
     }
     $arguments = @('--headless', '--path', $fixture, '--script', 'res://tests/run_tests.gd')
-    if ($case -eq 'multiple_ticks') { $arguments += @('--fixed-fps', '10') }
     $expected = 0
     if ($case -eq 'missing_module_run') { $expected = 1 }
     if ($Stage -eq 'Baseline' -and $case -in @('multiple_ticks', 'invalid_speed')) { $expected = 1 }
     if ($Stage -eq 'Corrected' -and $case -in @('missing_movement', 'missing_aim', 'runtime_subtest', 'runtime_module')) { $expected = 1 }
     $ErrorActionPreference = 'Continue'
-    $output = @(& $engine @arguments 2>&1)
-    $code = $LASTEXITCODE
+    if ($case -eq 'multiple_ticks') {
+        # Mesmo conjunto integral, quatro orçamentos40s simulados independentes.
+        # Nenhum aumento de watchdog nem remoção de módulos/asserções S2/S3.
+        $output=@();$code=0
+        foreach($group in @('movement','combat','enemies','encounter')) {
+            $part=@(& $engine @arguments --fixed-fps 10 -- --test-group $group 2>&1)
+            $partCode=$LASTEXITCODE
+            $partText=$part -join "`n"
+            [IO.File]::WriteAllText((Join-Path $fixture ($group+'.log')),$partText+"`nEXIT=$partCode`n",$utf8)
+            if($partCode -ne 0 -or -not $partText.Contains('TEST_GROUP_COMPLETE: '+$group)){$code=1}
+            $output += $part
+        }
+    } else {
+        $output = @(& $engine @arguments 2>&1)
+        $code = $LASTEXITCODE
+    }
     $ErrorActionPreference = 'Stop'
     $text = $output -join "`n"
     [IO.File]::WriteAllText((Join-Path $fixture 'result.log'), $text + "`nEXIT=$code`n", $utf8)

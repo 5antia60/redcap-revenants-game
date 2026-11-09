@@ -1,6 +1,6 @@
 # GDD — Último Sol
 
-Estado vigente: S0/S1 integradas e S1 aceita; S2 e seu plano detalhado aprovados para implementação por agentes com revisão por tarefa. Nome criativo provisório. Atualização: 2026-10-29. Repositório de trabalho: `redcap-revenants-game`.
+Estado vigente em 2026-11-04: S0/S1 integradas e S1 aceita; S2 e correção de dano integradas, aceite dirigido em teclado/mouse registrado e controle físico explicitamente adiado. S3 aprovada para implementação por agentes com revisão por unidade, somente no recorte abaixo. Nome criativo provisório. Repositório de trabalho: `redcap-revenants-game`.
 
 ## 1. Visão e decisões confirmadas
 Roguelike de ação 2D com aparência isométrica e combate frenético, ambientado em um apocalipse urbano brasileiro com zumbis. Desenvolvido em Godot 4 e GDScript, coordenado com agentes especializados no OpenCode. Alvo inicial: PC, single-player offline, teclado/mouse e controle.
@@ -96,3 +96,6 @@ Perda de foco ou desconexão do controle ativo interrompe golpe/esquiva, limpa s
 Cassetete recua, setor ativo aparece somente durante dano e retorno comunica recuperação. Acerto combina reação breve do alvo, redução de vida e som seco; erro usa som leve. Sons sintetizados localmente, sem assets externos, e volume conservador. Sem hit-stop global, tremor de câmera, flashes de tela ou gore nesta proposta. Sem som, acerto/dano/esquiva continuam compreensíveis.
 
 HUD compacto mostra vida, esquiva pronta/recarga e instruções, sem cobrir a prova espacial S1. Capturas nativas 1280×720 e 1920×1080 mostram preparação/ativo/recuperação, alvo atingido/morto, esquiva/proteção, pausa e reinício. Testes de regra e física precedem ajuste de sensação. Usuário executa roteiro real em teclado/mouse e controle, relata resposta/impacto/legibilidade e aprova ou pede ajuste delimitado; simulação ou captura automatizada não substitui esse aceite. S3 só começa com autorização explícita.
+
+## 10. S3 — primeiro encontro aprovado em 2026-11-04
+Usuário aprovou um perseguidor corpo a corpo e um encontro com três inimigos, sem expandir arquétipos, arsenal, progressão ou arte final. A intenção é reconhecer preparação, evitar o golpe e finalizar/reiniciar com segurança. Regras, parâmetros aprovados, carga de ensaio e tarefas estão no detalhamento S3 de `ROADMAP.md`, fonte única desses valores. Combate e laboratório S2 são preservados. A aprovação autoriza implementação com agentes/revisão por unidade; controle físico S2/S3 continua pendente para quando o usuário tiver o dispositivo, sem aceite final, tag ou merge automático implícitos.

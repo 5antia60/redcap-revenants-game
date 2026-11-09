@@ -39,7 +39,7 @@ func run(tree: SceneTree, check: Callable) -> bool:
 		viewport.size = Vector2i(1280, 720)
 		viewport.world_2d = World2D.new()
 		tree.root.add_child(viewport)
-		var main := packed.instantiate()
+		var main := preload("res://tests/fixtures/s3_lab_main.gd").instantiate()
 		viewport.add_child(main)
 		_freeze(main.get_node("MovementLab"))
 		var lab := main.get_node_or_null("MovementLab")

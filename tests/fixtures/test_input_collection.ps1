@@ -8,13 +8,15 @@ $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $engine = Join-Path $root '.tools/godot/Godot_v4.7.2-stable_win64_console.exe'
 $version = @(& $engine --version) -join "`n"
 if ($LASTEXITCODE -ne 0 -or $version.Trim() -cne '4.7.2.stable.official.ed1daf0bf') { throw 'Engine fixa incompatível.' }
-$destination = Join-Path $root ('.tools/s2/collection-mutations-' + [guid]::NewGuid().ToString('N'))
+$destination = Join-Path $root ('.tools/s3/unit2-collection-mutations-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $destination | Out-Null
 $files = @('project.godot', 'src/game/main.tscn', 'src/arenas/movement_lab.tscn', 'src/arenas/movement_lab.gd',
     'src/player/player.tscn', 'src/player/player.gd', 'src/player/player_input.gd', 'src/player/input_state.gd',
     'tests/fixtures/test_player_input_collection.gd', 'tests/fixtures/run_input_collection.gd',
     'src/player/action_state.gd', 'src/combat/health.gd', 'src/combat/melee_hit.gd',
-    'src/arenas/training_target.gd', 'src/arenas/training_target.tscn', 'src/arenas/damage_zone.gd', 'src/game/main.gd')
+    'src/arenas/training_target.gd', 'src/arenas/training_target.tscn', 'src/arenas/damage_zone.gd', 'src/game/main.gd',
+    'src/enemies/melee_chaser.gd','src/enemies/melee_chaser_state.gd','src/enemies/melee_chaser.tscn',
+    'src/arenas/first_encounter.gd','src/arenas/first_encounter.tscn','tests/fixtures/s3_lab_main.gd')
 $cases = @('normal', 'no_initial_focus', 'no_enumeration', 'wrong_axis', 'wrong_device', 'held_key_false',
     'no_button_collection', 'wrong_button_device', 'held_button_bypass', 'mixed_device_edges')
 $results = @()

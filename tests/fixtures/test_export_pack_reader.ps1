@@ -5,12 +5,12 @@ $utf8 = New-Object Text.UTF8Encoding($false)
 [Console]::OutputEncoding=$utf8
 $OutputEncoding=$utf8
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-$destination = Join-Path $root ('.tools/s2/reader-fixtures-' + [guid]::NewGuid().ToString('N'))
+$destination = Join-Path $root ('.tools/s3/unit2-reader-fixtures-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $destination | Out-Null
-$sources = @('src/player/input_state.gd','src/player/player_input.gd','src/player/player.gd','src/arenas/movement_lab.gd',
-    'src/game/main.tscn','src/player/player.tscn','src/arenas/movement_lab.tscn',
-    'src/player/action_state.gd','src/combat/health.gd','src/combat/melee_hit.gd','src/arenas/training_target.gd',
-    'src/arenas/training_target.tscn','src/arenas/damage_zone.gd','src/game/main.gd')
+$sources = @('src/player/input_state.gd','src/player/player_input.gd','src/player/player.gd','src/player/action_state.gd',
+    'src/player/player.tscn','src/combat/health.gd','src/combat/melee_hit.gd','src/game/main.gd','src/game/main.tscn',
+    'src/enemies/melee_chaser.gd','src/enemies/melee_chaser_state.gd','src/enemies/melee_chaser.tscn',
+    'src/arenas/first_encounter.gd','src/arenas/first_encounter.tscn')
 $manifest = Join-Path $destination 'frozen-source.json'
 $resources = @($sources | ForEach-Object { $p=Join-Path $root $_; [ordered]@{path='res://'+$_;
     size=(Get-Item -LiteralPath $p).Length;sha256=(Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash.ToLowerInvariant()} })
@@ -80,8 +80,11 @@ $cases=@('valid_empty','valid_uid','valid_editor16','global_nonempty','global_tr
     'uid_negative_id','pck_version','engine_version','pck_flags','entry_flags','pck_duplicate','pck_alias','pck_traversal',
     'pck_offset','pck_overlap','pck_truncated','pck_trailing','pck_count_limit','resource_changed','resource_missing',
     'hash_mismatch','size_mismatch','manifest_invalid','manifest_version_string','metadata_missing',
-    'valid_uid14','manifest_s1','manifest_extra_field','entry_extra_field','metadata_unknown')
-$newSources=@($sources | Select-Object -Skip 7)
+    'valid_uid14','manifest_s1','manifest_s2','manifest_missing','manifest_duplicate','manifest_extra_source',
+    'manifest_extra_field','entry_extra_field','metadata_unknown','uid_old_s2')
+# S3 adiciona exatamente cinco fontes ao conjunto S2 de mesma cardinalidade.
+$newSources=@('src/enemies/melee_chaser.gd','src/enemies/melee_chaser_state.gd','src/enemies/melee_chaser.tscn',
+    'src/arenas/first_encounter.gd','src/arenas/first_encounter.tscn')
 for($i=0;$i -lt $newSources.Count;$i++){$cases += "new_missing_$i","new_changed_$i"}
 $failures=0; $results=@()
 foreach($case in $cases) {
@@ -98,6 +101,7 @@ foreach($case in $cases) {
         'uid_tool' {$uidEntries[0].Path='res://.tools/inert.gd'}
         'uid_absolute' {$uidEntries[0].Path='C:/inert.gd'}
         'uid_user' {$uidEntries[0].Path='user://inert.gd'}
+        'uid_old_s2' {$uidEntries[0].Path='res://src/arenas/movement_lab.gd'}
         'uid_alias' {$uidEntries[0].Path='res://src/player/Player.gd'}
         'uid_traversal' {$uidEntries[0].Path='res://src/game/../../tests/inert.gd'}
         'uid_conflict_id' {$uidEntries[1].Id=31}
@@ -124,6 +128,7 @@ foreach($case in $cases) {
     if($case -eq 'hash_mismatch'){$hash='0'*64}
     if($case -eq 'size_mismatch'){$size++}
     $selectedManifest=$manifest
+    if($case -eq 'manifest_missing'){$selectedManifest=Join-Path $destination 'absent.json'}
     if($case -eq 'manifest_invalid') {
         $selectedManifest=Join-Path $destination 'invalid-manifest.json'
         [IO.File]::WriteAllText($selectedManifest,'{"version":1,"resources":[]}',$utf8)
@@ -132,10 +137,19 @@ foreach($case in $cases) {
         $selectedManifest=Join-Path $destination 'string-version-manifest.json'
         [IO.File]::WriteAllText($selectedManifest,([ordered]@{version='1';resources=$resources}|ConvertTo-Json -Depth 5),$utf8)
     }
-    if($case -in @('manifest_s1','manifest_extra_field','entry_extra_field')) {
+    if($case -in @('manifest_s1','manifest_s2','manifest_duplicate','manifest_extra_source','manifest_extra_field','entry_extra_field')) {
         $selectedManifest=Join-Path $destination ($case+'.json')
         $data=[ordered]@{version=1;resources=$resources}
         if($case -eq 'manifest_s1'){$data.resources=@($resources|Select-Object -First 7)}
+        if($case -eq 'manifest_s2'){
+            $oldSources=@('src/player/input_state.gd','src/player/player_input.gd','src/player/player.gd','src/arenas/movement_lab.gd',
+                'src/game/main.tscn','src/player/player.tscn','src/arenas/movement_lab.tscn','src/player/action_state.gd',
+                'src/combat/health.gd','src/combat/melee_hit.gd','src/arenas/training_target.gd','src/arenas/training_target.tscn',
+                'src/arenas/damage_zone.gd','src/game/main.gd')
+            $data.resources=@($oldSources|ForEach-Object{$p=Join-Path $root $_;[ordered]@{path='res://'+$_;size=(Get-Item -LiteralPath $p).Length;sha256=(Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash.ToLowerInvariant()}})
+        }
+        if($case -eq 'manifest_duplicate'){$data.resources=@($resources[0]) + @($resources|Select-Object -Skip 1 -First 12) + @($resources[0])}
+        if($case -eq 'manifest_extra_source'){$data.resources=@($resources)+@([ordered]@{path='res://tests/inert.gd';size=1;sha256=('0'*64)})}
         if($case -eq 'manifest_extra_field'){$data.extra='inert'}
         if($case -eq 'entry_extra_field'){$data.resources=@($resources|ForEach-Object{[ordered]@{path=$_.path;size=$_.size;sha256=$_.sha256;extra='inert'}})}
         [IO.File]::WriteAllText($selectedManifest,($data|ConvertTo-Json -Depth 5),$utf8)
@@ -148,7 +162,7 @@ foreach($case in $cases) {
     $expected=$case -in @('valid_empty','valid_uid','valid_editor16','valid_uid14')
     $marker=switch -Regex ($case) {
         '^global_' {'cache global';break}
-        '^uid_(test|tool|absolute|user|traversal|alias)$' {'quatorze fontes';break}
+        '^uid_(test|tool|absolute|user|traversal|alias|old_s2)$' {'quatorze fontes';break}
         '^uid_conflict' {'UID: conflito';break}
         '^uid_truncated$' {'truncado';break}
         '^uid_trailing$' {'UID: bytes excedentes';break}
@@ -158,6 +172,9 @@ foreach($case in $cases) {
         '^resource_changed$' {'bytes divergem da fonte';break}
         '^resource_missing$' {'fontes ausentes:';break}
         '^(hash_mismatch|size_mismatch)$' {'tamanho/hash externo';break}
+        '^manifest_missing$' {'';break}
+        '^manifest_duplicate$' {'fonte duplicada';break}
+        '^manifest_s2$' {'caminho do manifesto inválido';break}
         '^manifest_' {'manifesto de quatorze fontes';break}
         '^entry_extra_field$' {'caminho do manifesto inválido';break}
         '^pck_overlap$' {'sobreposição/lacuna de arquivos';break}
@@ -167,8 +184,7 @@ foreach($case in $cases) {
         default {'INVENTORY_REJECT:'}
     }
     $correct=$accepted -eq $expected -and ($expected -or ($message.Contains('INVENTORY_REJECT:') -and $message.Contains($marker)))
-    if($case -match '^new_' -or $case -in @('global_nonempty','uid_test','uid_user','uid_traversal','uid_conflict_id','uid_truncated','uid_trailing','uid_count_limit',
-        'hash_mismatch','manifest_invalid','manifest_s1','manifest_extra_field','entry_extra_field','metadata_unknown','pck_overlap')) {
+    if(-not $expected) {
         $ErrorActionPreference='Continue'
         $gateOutput=@(& powershell -NoProfile -File (Join-Path $root 'tests/test_export_audit.ps1') -Mode Audit -PckPath $pack -ManifestPath $selectedManifest -ExpectedPckSize $size -ExpectedPckSha256 $hash 2>&1)
         $gateCode=$LASTEXITCODE

@@ -29,16 +29,23 @@ var _blocked_actions: Dictionary = {}
 var _attack_edge: bool = false
 var _dodge_edge: bool = false
 var _button_edges: Dictionary = {}
+var _window: Window
+var _detached: bool = false
 
 
 func _ready() -> void:
+	if _detached or not is_instance_valid(player):
+		detach_player()
+		return
 	# Entrada continua observando solturas e pausa no menu; nenhum relógio de jogo roda aqui.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	# Menor prioridade roda antes do corpo, inclusive quando instanciado depois dele.
 	process_physics_priority = player.process_physics_priority - 1
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
-	get_window().focus_exited.connect(set_focus_active.bind(false))
-	get_window().focus_entered.connect(set_focus_active.bind(true))
+	_window = get_window()
+	_window.focus_exited.connect(set_focus_active.bind(false))
+	_window.focus_entered.connect(set_focus_active.bind(true))
+	player.tree_exiting.connect(detach_player)
 	# A cena pode nascer/reaparecer depois de a janela já ter perdido foco.
 	set_focus_active(_read_window_has_focus())
 	rearm()
@@ -47,17 +54,50 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	detach_player()
+
+
+func detach_player() -> void:
+	# Encerramento terminal do vínculo, também seguro durante tree_exiting.
+	# Não envia intenção, interrupção ou rearmamento ao receptor que está saindo.
+	if _detached:
+		return
+	_detached = true
 	if Input.joy_connection_changed.is_connected(_on_joy_connection_changed):
 		Input.joy_connection_changed.disconnect(_on_joy_connection_changed)
-	var window := get_window()
-	for focused: bool in [false, true]:
-		var callback := set_focus_active.bind(focused)
-		var event: Signal = window.focus_entered if focused else window.focus_exited
-		if event.is_connected(callback):
-			event.disconnect(callback)
+	if is_instance_valid(_window):
+		for focused: bool in [false, true]:
+			var callback := set_focus_active.bind(focused)
+			var event: Signal = _window.focus_entered if focused else _window.focus_exited
+			if event.is_connected(callback):
+				event.disconnect(callback)
+	if is_instance_valid(player) and player.tree_exiting.is_connected(detach_player):
+		player.tree_exiting.disconnect(detach_player)
+	player = null
+	_window = null
+	process_mode = Node.PROCESS_MODE_DISABLED
+	_gameplay_enabled = false
+	focus_active = false
+	active_device = -1
+	_keys.clear()
+	_blocked_keys.clear()
+	_devices.clear()
+	_blocked_actions.clear()
+	_button_edges.clear()
+	_attack_edge = false
+	_dodge_edge = false
+	_mouse_position = Vector2.ZERO
+	_mouse_reference = false
+	_mouse_distance = 0.0
+	_mouse_activity = false
+	_mouse_aim_enabled = false
+	_stick_activity = false
+	_state = IntentState.new()
 
 
 func _input(event: InputEvent) -> void:
+	if _detached:
+		return
 	if event is InputEventKey and event.physical_keycode in MOVE_KEYS:
 		var code: int = event.physical_keycode
 		if not event.pressed:
@@ -90,6 +130,8 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _detached:
+		return
 	# GUI é processada antes desta etapa. Clique/confirmação do menu não vira ação.
 	var action := ""
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -107,6 +149,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func sample_joypad(device: int, movement: Vector2, aim: Vector2) -> void:
+	if _detached:
+		return
 	if device < 0:
 		return
 	if not _devices.has(device):
@@ -138,6 +182,8 @@ func sample_joypad(device: int, movement: Vector2, aim: Vector2) -> void:
 
 
 func set_focus_active(focused: bool) -> void:
+	if _detached:
+		return
 	if focused == focus_active:
 		return
 	focus_active = focused
@@ -163,6 +209,8 @@ func set_focus_active(focused: bool) -> void:
 
 
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
+	if _detached:
+		return
 	if connected:
 		_devices[device] = _new_device(false)
 	else:
@@ -258,12 +306,16 @@ func _collect_buttons(device: int) -> void:
 
 
 func set_gameplay_enabled(enabled: bool) -> void:
+	if _detached:
+		return
 	_gameplay_enabled = enabled
 	rearm()
 	_stop_motion()
 
 
 func rearm() -> void:
+	if _detached:
+		return
 	_attack_edge = false
 	_dodge_edge = false
 	_button_edges.clear()

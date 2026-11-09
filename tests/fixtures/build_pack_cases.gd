@@ -1,10 +1,12 @@
 extends SceneTree
 ## PCKs locais inertes, construídos de fontes conhecidas. Não recebe packs externos.
 
-const SOURCES := ["src/player/input_state.gd", "src/player/player_input.gd", "src/player/player.gd",
-	"src/arenas/movement_lab.gd", "src/game/main.tscn", "src/player/player.tscn", "src/arenas/movement_lab.tscn",
-	"src/player/action_state.gd", "src/combat/health.gd", "src/combat/melee_hit.gd", "src/arenas/training_target.gd",
-	"src/arenas/training_target.tscn", "src/arenas/damage_zone.gd", "src/game/main.gd"]
+const SOURCES := ["src/player/input_state.gd", "src/player/player_input.gd", "src/player/player.gd", "src/player/action_state.gd",
+	"src/player/player.tscn", "src/combat/health.gd", "src/combat/melee_hit.gd", "src/game/main.gd", "src/game/main.tscn",
+	"src/enemies/melee_chaser.gd", "src/enemies/melee_chaser_state.gd", "src/enemies/melee_chaser.tscn",
+	"src/arenas/first_encounter.gd", "src/arenas/first_encounter.tscn"]
+const NEW_SOURCES := ["src/enemies/melee_chaser.gd", "src/enemies/melee_chaser_state.gd", "src/enemies/melee_chaser.tscn",
+	"src/arenas/first_encounter.gd", "src/arenas/first_encounter.tscn"]
 const CASES := ["valid", "extra_script", "orphan_gdc", "foreign_remap", "external_remap", "cycle_remap",
 	"alias", "traversal_remap", "test_file", "tool_file", "docs_file", "env_file", "addon",
 	"missing_authorized", "changed_script", "embedded_script", "tool_annotation", "opaque_scene"]
@@ -16,7 +18,7 @@ func _initialize() -> void:
 		printerr("FIXTURE_WATCHDOG")
 		quit(1))
 	var args := OS.get_cmdline_user_args()
-	if args.size() != 1 or not args[0].begins_with("res://.tools/s2/pack-cases-") or ".." in args[0] or "\\" in args[0]:
+	if args.size() != 1 or not args[0].begins_with("res://.tools/s3/unit2-pack-cases-") or ".." in args[0] or "\\" in args[0]:
 		quit(1)
 		return
 	var destination: String = args[0]
@@ -33,7 +35,10 @@ func _initialize() -> void:
 		return
 	for case_name: String in CASES:
 		_build(destination, binary, case_name)
-	print("FIXTURES: %d packs inertes; falha=%s" % [CASES.size(), failed])
+	for index: int in range(NEW_SOURCES.size()):
+		_build(destination, binary, "new_missing_%d" % index)
+		_build(destination, binary, "new_changed_%d" % index)
+	print("FIXTURES: %d packs inertes; falha=%s" % [CASES.size() + 10, failed])
 	quit(1 if failed else 0)
 
 
@@ -54,10 +59,14 @@ func _build(destination: String, binary: String, case_name: String) -> void:
 		uid.put_data(path)
 		_add(pack, ".godot/uid_cache.bin", _write(destination.path_join("allowed-uid-cache.bin"), uid.data_array))
 	for relative: String in SOURCES:
+		if case_name.begins_with("new_missing_") and relative == NEW_SOURCES[int(case_name.trim_prefix("new_missing_"))]:
+			continue
 		if case_name == "missing_authorized" and relative == "src/player/player.gd":
 			continue
 		var source := "res://" + relative
 		var replacement := ""
+		if case_name.begins_with("new_changed_") and relative == NEW_SOURCES[int(case_name.trim_prefix("new_changed_"))]:
+			replacement = FileAccess.get_file_as_string(source) + "\n# Alteração inerte conhecida.\n"
 		if relative == "src/player/player.gd":
 			if case_name == "changed_script":
 				replacement = FileAccess.get_file_as_string(source) + "\n# Alteração inerte conhecida.\n"

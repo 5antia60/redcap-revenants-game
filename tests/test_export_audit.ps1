@@ -12,19 +12,19 @@ $utf8 = New-Object Text.UTF8Encoding($false)
 $OutputEncoding = $utf8
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $engine = Join-Path $root '.tools/godot/Godot_v4.7.2-stable_win64_console.exe'
-$sources = @('src/player/input_state.gd', 'src/player/player_input.gd', 'src/player/player.gd',
-    'src/arenas/movement_lab.gd', 'src/game/main.tscn', 'src/player/player.tscn', 'src/arenas/movement_lab.tscn',
-    'src/player/action_state.gd','src/combat/health.gd','src/combat/melee_hit.gd','src/arenas/training_target.gd',
-    'src/arenas/training_target.tscn','src/arenas/damage_zone.gd','src/game/main.gd')
+$sources = @('src/player/input_state.gd','src/player/player_input.gd','src/player/player.gd','src/player/action_state.gd',
+    'src/player/player.tscn','src/combat/health.gd','src/combat/melee_hit.gd','src/game/main.gd','src/game/main.tscn',
+    'src/enemies/melee_chaser.gd','src/enemies/melee_chaser_state.gd','src/enemies/melee_chaser.tscn',
+    'src/arenas/first_encounter.gd','src/arenas/first_encounter.tscn')
 . (Join-Path $PSScriptRoot 'read_export_pack.ps1')
 
 function Write-SourceManifest([string]$Destination) {
     # Operação explícita sobre fonte congelada/revisada, não sobre inventário do PCK.
     $full = [IO.Path]::GetFullPath($Destination)
-    $boundary = [IO.Path]::GetFullPath((Join-Path $root '.tools/s2')) + [IO.Path]::DirectorySeparatorChar
+    $boundary = [IO.Path]::GetFullPath((Join-Path $root '.tools/s3')) + [IO.Path]::DirectorySeparatorChar + 'unit2-'
     if (-not $full.StartsWith($boundary, [StringComparison]::OrdinalIgnoreCase) -or
         (Test-Path -LiteralPath $full) -or -not (Test-Path -LiteralPath (Split-Path -Parent $full) -PathType Container)) {
-        throw 'Manifesto novo exige diretório existente sob .tools/s2 e destino não ocupado.'
+        throw 'Manifesto novo exige diretório existente sob .tools/s3/unit2-* e destino não ocupado.'
     }
     $entries = @($sources | ForEach-Object {
         $source = Join-Path $root $_
@@ -42,7 +42,7 @@ function Invoke-PackAudit([string]$Pack, [string]$Manifest, [string]$ExpectedHas
     }
     try {
         $attestation = Invoke-S1PackInspection -PckPath ([IO.Path]::GetFullPath($Pack)) -ExpectedPckSize $ExpectedSize -ExpectedPckSha256 $ExpectedHash -ManifestPath ([IO.Path]::GetFullPath($Manifest))
-        $attestationPath = Join-Path $root ('.tools/s2/pack-attestation-' + [guid]::NewGuid().ToString('N') + '.json')
+        $attestationPath = Join-Path $root ('.tools/s3/unit2-pack-attestation-' + [guid]::NewGuid().ToString('N') + '.json')
         Write-S1NewJson $attestationPath $attestation
     } catch {
         return @{ Code = 1; Text = 'PREENGINE_REJECT: ' + $_.Exception.Message }
@@ -77,12 +77,12 @@ try {
     $version = @(& $engine --version) -join "`n"
     if ($LASTEXITCODE -ne 0 -or $version.Trim() -cne '4.7.2.stable.official.ed1daf0bf') { throw 'Engine fixa incompatível.' }
     $id = [guid]::NewGuid().ToString('N')
-    $evidence = Join-Path $root ('.tools/s2/audit-fixtures-' + $id)
+    $evidence = Join-Path $root ('.tools/s3/unit2-audit-fixtures-' + $id)
     New-Item -ItemType Directory -Path $evidence | Out-Null
     $manifest = Join-Path $evidence 'source-manifest.json'
     # Manifesto válido nasce ANTES das mutações conhecidas e nunca é regenerado por caso.
     Write-SourceManifest $manifest
-    $packsRelative = '.tools/s2/pack-cases-' + $id
+    $packsRelative = '.tools/s3/unit2-pack-cases-' + $id
     $packs = Join-Path $root $packsRelative
     $build = @(& $engine --headless --path $root --script 'res://tests/fixtures/build_pack_cases.gd' -- ('res://' + $packsRelative) 2>&1)
     $buildCode = $LASTEXITCODE
@@ -90,7 +90,7 @@ try {
     if ($buildCode -ne 0) { throw 'Construção de fixtures falhou; consultar build.log.' }
     $failures = 0
     $cases = @(Get-ChildItem -LiteralPath $packs -Filter '*.pck' -File)
-    if ($cases.Count -ne 18) { throw 'Quantidade de fixtures inesperada.' }
+    if ($cases.Count -ne 28) { throw 'Quantidade de fixtures inesperada.' }
     foreach ($case in $cases) {
         $hash = (Get-FileHash -LiteralPath $case.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
         $result = Invoke-PackAudit $case.FullName $manifest $hash $case.Length
@@ -121,7 +121,7 @@ try {
         [IO.File]::WriteAllText((Join-Path $evidence ($case + '.log')), $result.Text + "`nEXIT=$($result.Code)`n", $utf8)
         Write-Host "$case expected=1 actual=$($result.Code) phase=$phase"
     }
-    Write-Host "Audit fixtures: 21 casos, $failures divergências; logs=$evidence"
+    Write-Host "Audit fixtures: 31 casos, $failures divergências; logs=$evidence"
     if ($failures -gt 0) { exit 1 }
     exit 0
 } catch {

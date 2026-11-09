@@ -184,6 +184,7 @@ func _resolve_target(target: CharacterBody2D) -> void:
 
 
 func _draw() -> void:
+	_refresh_ground_sector()
 	var ink := Color("182d36")
 	var light := Color("f4d8a5")
 	if health.dead:
@@ -194,15 +195,6 @@ func _draw() -> void:
 	var phase: int = action_state.phase
 	var active := active_snapshot or phase == State.ACTIVE
 	var direction: Vector2 = action_state.attack_direction
-	if phase == State.WINDUP or active:
-		var points: PackedVector2Array = _sector.sector_points(direction)
-		if active:
-			draw_colored_polygon(points, Color(0.75, 0.35, 0.18, 0.48))
-			for distance: float in [26.0, 40.0, 54.0]:
-				draw_line(direction.rotated(-0.65) * distance, direction.rotated(0.65) * distance, light, 2.0)
-		var outline := points.duplicate()
-		outline.append(points[0])
-		draw_polyline(outline, light, 3.0 if active else 1.5)
 	_draw_shadow(ink)
 	var lean := -3.0 if phase == State.WINDUP else 3.0 if active else 0.0
 	draw_colored_polygon(PackedVector2Array([Vector2(-10, -2), Vector2(-14, -24 + lean), Vector2(-7, -31 + lean), Vector2(9, -28 + lean), Vector2(12, -2)]), Color("697654"))
@@ -219,6 +211,34 @@ func _draw() -> void:
 		for y: float in [-52.0, -47.0]:
 			draw_line(Vector2(-8, y), Vector2(8, y), light, 2.5)
 	draw_string(ThemeDB.fallback_font, Vector2(-20, -68), "%d/30" % health.current, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, light)
+
+
+func _refresh_ground_sector() -> void:
+	# Somente apresentação. CanvasItems nativos separam chão/corpos sem script
+	# novo, relógio próprio, mudança do setor físico ou elevação dos personagens.
+	var ground := get_node_or_null("GroundSector") as Node2D
+	if ground == null:
+		return
+	var phase: int = action_state.phase
+	var active := active_snapshot or phase == State.ACTIVE
+	ground.visible = not health.dead and (phase == State.WINDUP or active)
+	if not ground.visible:
+		return
+	var direction: Vector2 = action_state.attack_direction
+	var points: PackedVector2Array = _sector.sector_points(direction)
+	var fill := ground.get_node("Fill") as Polygon2D
+	fill.visible = active
+	fill.polygon = points
+	var outline := ground.get_node("Outline") as Line2D
+	var closed := points.duplicate()
+	closed.append(points[0])
+	outline.points = closed
+	outline.width = 3.0 if active else 1.5
+	for index: int in range(3):
+		var hatch := ground.get_node("Hatch%d" % index) as Line2D
+		var distance: float = [26.0, 40.0, 54.0][index]
+		hatch.visible = active
+		hatch.points = PackedVector2Array([direction.rotated(-0.65) * distance, direction.rotated(0.65) * distance])
 
 
 func _draw_shadow(ink: Color) -> void:
