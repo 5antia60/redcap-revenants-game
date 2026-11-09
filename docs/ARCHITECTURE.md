@@ -1,6 +1,6 @@
 # Arquitetura inicial
 
-Estado em 2026-11-09: S0/S1 integradas e S1 aceita; S2/correção integradas, aceite dirigido em teclado/mouse registrado e controle físico pendente. S3 candidata0.2.0 entregue tecnicamente em6e56ddb/8267123 na branch própria após revisões/exports/staging; PR para main aguarda autenticação. Contratos S1/S2 nas seções8/9, U1 na seção10 e U2 na seção11. Aceite humano, controle físico e integração não são inferidos. Evidências e gates reais ficam no contexto/roadmap e relatórios identificados; registros anteriores são históricos quando incompatíveis com o estado atual.
+Estado em 2026-11-09: S0/S1 integradas e S1 aceita; S2/correção integradas, aceite dirigido em teclado/mouse registrado e controle físico pendente. S3 candidata0.2.0 entregue tecnicamente em6e56ddb/8267123 na branch própria após revisões/exports/staging; PR5 para main aberto/conferido após login. Contratos S1/S2 nas seções8/9, U1 na seção10 e U2 na seção11. Aceite humano, controle físico e integração não são inferidos. Evidências e gates reais ficam no contexto/roadmap e relatórios identificados; registros anteriores são históricos quando incompatíveis com o estado atual.
 
 ## 1. Escolhas mínimas e alternativas
 | Proposta | Motivo | Alternativa e quando reconsiderar |
